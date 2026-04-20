@@ -1,0 +1,197 @@
+import { useEffect, useState } from "react";
+import { useNavigate, useParams, Link } from "react-router-dom";
+import { ArrowLeft, Loader2, Trash2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
+import LandlordLayout from "@/components/landlord/LandlordLayout";
+import ImageUpload from "@/components/landlord/ImageUpload";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
+
+type PropertyType = "apartment" | "house" | "commercial" | "land" | "other";
+type PropertyStatus = "active" | "draft" | "archived";
+
+interface FormState {
+  name: string;
+  address: string;
+  city: string;
+  property_type: PropertyType;
+  units_count: number;
+  monthly_rent_ksh: number;
+  status: PropertyStatus;
+  description: string;
+  cover_image_url: string | null;
+}
+
+const empty: FormState = {
+  name: "", address: "", city: "", property_type: "apartment",
+  units_count: 1, monthly_rent_ksh: 0, status: "active", description: "", cover_image_url: null,
+};
+
+export default function PropertyForm() {
+  const { id } = useParams();
+  const isNew = !id || id === "new";
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [form, setForm] = useState<FormState>(empty);
+  const [loading, setLoading] = useState(!isNew);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (isNew || !user) return;
+    supabase.from("properties").select("*").eq("id", id).maybeSingle().then(({ data, error }) => {
+      if (error || !data) { toast.error("Property not found"); navigate("/landlord/properties"); return; }
+      setForm({
+        name: data.name, address: data.address, city: data.city,
+        property_type: data.property_type, units_count: data.units_count,
+        monthly_rent_ksh: Number(data.monthly_rent_ksh), status: data.status,
+        description: data.description ?? "", cover_image_url: data.cover_image_url,
+      });
+      setLoading(false);
+    });
+  }, [id, isNew, navigate, user]);
+
+  const update = <K extends keyof FormState>(k: K, v: FormState[K]) => setForm(f => ({ ...f, [k]: v }));
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+    setSaving(true);
+    const payload = { ...form, owner_id: user.id };
+    const { data, error } = isNew
+      ? await supabase.from("properties").insert(payload).select().single()
+      : await supabase.from("properties").update(payload).eq("id", id!).select().single();
+    setSaving(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success(isNew ? "Property created" : "Changes saved");
+    navigate(`/landlord/properties/${data.id}`);
+  };
+
+  const handleDelete = async () => {
+    if (!id || isNew) return;
+    const { error } = await supabase.from("properties").delete().eq("id", id);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Property deleted");
+    navigate("/landlord/properties");
+  };
+
+  if (loading) {
+    return <LandlordLayout><div className="flex justify-center py-20"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div></LandlordLayout>;
+  }
+
+  return (
+    <LandlordLayout title={isNew ? "New property" : "Edit property"}>
+      <Link to="/landlord/properties" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6">
+        <ArrowLeft className="h-4 w-4" /> Back to properties
+      </Link>
+
+      <form onSubmit={handleSave} className="grid lg:grid-cols-3 gap-6 max-w-6xl">
+        <div className="lg:col-span-2 space-y-6">
+          <div className="bg-card border border-border p-6 lg:p-8 space-y-5">
+            <h2 className="font-serif text-xl mb-2">Property details</h2>
+
+            <div className="space-y-2">
+              <Label htmlFor="name">Property name *</Label>
+              <Input id="name" required value={form.name} onChange={(e) => update("name", e.target.value)} placeholder="e.g. Riverside Heights" />
+            </div>
+
+            <div className="grid sm:grid-cols-2 gap-5">
+              <div className="space-y-2">
+                <Label htmlFor="address">Street address *</Label>
+                <Input id="address" required value={form.address} onChange={(e) => update("address", e.target.value)} placeholder="Ngong Road" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="city">City *</Label>
+                <Input id="city" required value={form.city} onChange={(e) => update("city", e.target.value)} placeholder="Nairobi" />
+              </div>
+            </div>
+
+            <div className="grid sm:grid-cols-3 gap-5">
+              <div className="space-y-2">
+                <Label htmlFor="type">Type</Label>
+                <Select value={form.property_type} onValueChange={(v) => update("property_type", v as PropertyType)}>
+                  <SelectTrigger id="type"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="apartment">Apartment</SelectItem>
+                    <SelectItem value="house">House</SelectItem>
+                    <SelectItem value="commercial">Commercial</SelectItem>
+                    <SelectItem value="land">Land</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="units">Units</Label>
+                <Input id="units" type="number" min={1} value={form.units_count} onChange={(e) => update("units_count", parseInt(e.target.value) || 1)} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="rent">Monthly rent (KSh)</Label>
+                <Input id="rent" type="number" min={0} step={100} value={form.monthly_rent_ksh} onChange={(e) => update("monthly_rent_ksh", parseFloat(e.target.value) || 0)} />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="desc">Description</Label>
+              <Textarea id="desc" rows={4} value={form.description} onChange={(e) => update("description", e.target.value)} placeholder="A brief description for tenants and team members." />
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-6">
+          <div className="bg-card border border-border p-6 space-y-5">
+            <ImageUpload value={form.cover_image_url} onChange={(url) => update("cover_image_url", url)} />
+
+            <div className="space-y-2">
+              <Label htmlFor="status">Status</Label>
+              <Select value={form.status} onValueChange={(v) => update("status", v as PropertyStatus)}>
+                <SelectTrigger id="status"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="draft">Draft</SelectItem>
+                  <SelectItem value="archived">Archived</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">Active properties appear in your public listings.</p>
+            </div>
+          </div>
+
+          <div className="bg-card border border-border p-6 space-y-3">
+            <Button type="submit" className="w-full" size="lg" disabled={saving}>
+              {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+              {isNew ? "Create property" : "Save changes"}
+            </Button>
+            <Button type="button" variant="outline" className="w-full" onClick={() => navigate(-1)}>Cancel</Button>
+
+            {!isNew && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button type="button" variant="ghost" className="w-full text-destructive hover:text-destructive hover:bg-destructive/10">
+                    <Trash2 className="h-4 w-4" /> Delete property
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete this property?</AlertDialogTitle>
+                    <AlertDialogDescription>This permanently removes the property and all its images. Tenant records remain but become unassigned.</AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+          </div>
+        </div>
+      </form>
+    </LandlordLayout>
+  );
+}
