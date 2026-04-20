@@ -41,6 +41,145 @@ export type Database = {
         }
         Relationships: []
       }
+      properties: {
+        Row: {
+          address: string
+          city: string
+          cover_image_url: string | null
+          created_at: string
+          description: string | null
+          id: string
+          monthly_rent_ksh: number
+          name: string
+          owner_id: string
+          property_type: Database["public"]["Enums"]["property_type"]
+          status: Database["public"]["Enums"]["property_status"]
+          units_count: number
+          updated_at: string
+        }
+        Insert: {
+          address: string
+          city: string
+          cover_image_url?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          monthly_rent_ksh?: number
+          name: string
+          owner_id: string
+          property_type?: Database["public"]["Enums"]["property_type"]
+          status?: Database["public"]["Enums"]["property_status"]
+          units_count?: number
+          updated_at?: string
+        }
+        Update: {
+          address?: string
+          city?: string
+          cover_image_url?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          monthly_rent_ksh?: number
+          name?: string
+          owner_id?: string
+          property_type?: Database["public"]["Enums"]["property_type"]
+          status?: Database["public"]["Enums"]["property_status"]
+          units_count?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      property_images: {
+        Row: {
+          created_at: string
+          id: string
+          property_id: string
+          sort_order: number
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          property_id: string
+          sort_order?: number
+          url: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          property_id?: string
+          sort_order?: number
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_images_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenants: {
+        Row: {
+          created_at: string
+          email: string | null
+          full_name: string
+          id: string
+          lease_end: string | null
+          lease_start: string | null
+          monthly_rent_ksh: number
+          notes: string | null
+          owner_id: string
+          phone: string | null
+          property_id: string | null
+          status: Database["public"]["Enums"]["tenant_status"]
+          unit_label: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          full_name: string
+          id?: string
+          lease_end?: string | null
+          lease_start?: string | null
+          monthly_rent_ksh?: number
+          notes?: string | null
+          owner_id: string
+          phone?: string | null
+          property_id?: string | null
+          status?: Database["public"]["Enums"]["tenant_status"]
+          unit_label?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          full_name?: string
+          id?: string
+          lease_end?: string | null
+          lease_start?: string | null
+          monthly_rent_ksh?: number
+          notes?: string | null
+          owner_id?: string
+          phone?: string | null
+          property_id?: string | null
+          status?: Database["public"]["Enums"]["tenant_status"]
+          unit_label?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenants_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -82,6 +221,9 @@ export type Database = {
         | "caretaker"
         | "tenant"
         | "service_provider"
+      property_status: "active" | "draft" | "archived"
+      property_type: "apartment" | "house" | "commercial" | "land" | "other"
+      tenant_status: "active" | "notice" | "ended"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -216,6 +358,9 @@ export const Constants = {
         "tenant",
         "service_provider",
       ],
+      property_status: ["active", "draft", "archived"],
+      property_type: ["apartment", "house", "commercial", "land", "other"],
+      tenant_status: ["active", "notice", "ended"],
     },
   },
 } as const
