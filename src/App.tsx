@@ -12,6 +12,10 @@ import Pricing from "./pages/Pricing";
 import NotFound from "./pages/NotFound";
 
 import LandlordDashboard from "./pages/landlord/Dashboard";
+import Properties from "./pages/landlord/Properties";
+import PropertyForm from "./pages/landlord/PropertyForm";
+import PropertyDetail from "./pages/landlord/PropertyDetail";
+import Tenants from "./pages/landlord/Tenants";
 import AdminDashboard from "./pages/admin/Dashboard";
 import CaretakerDashboard from "./pages/caretaker/Dashboard";
 import ServiceProviderDashboard from "./pages/service-provider/Dashboard";
@@ -38,14 +42,12 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
-            <Route
-              path="/landlord/dashboard"
-              element={
-                <ProtectedRoute allowedRoles={["landlord"]}>
-                  <LandlordDashboard />
-                </ProtectedRoute>
-              }
-            />
+            <Route path="/landlord/dashboard" element={<ProtectedRoute allowedRoles={["landlord"]}><LandlordDashboard /></ProtectedRoute>} />
+            <Route path="/landlord/properties" element={<ProtectedRoute allowedRoles={["landlord"]}><Properties /></ProtectedRoute>} />
+            <Route path="/landlord/properties/new" element={<ProtectedRoute allowedRoles={["landlord"]}><PropertyForm /></ProtectedRoute>} />
+            <Route path="/landlord/properties/:id" element={<ProtectedRoute allowedRoles={["landlord"]}><PropertyDetail /></ProtectedRoute>} />
+            <Route path="/landlord/properties/:id/edit" element={<ProtectedRoute allowedRoles={["landlord"]}><PropertyForm /></ProtectedRoute>} />
+            <Route path="/landlord/tenants" element={<ProtectedRoute allowedRoles={["landlord"]}><Tenants /></ProtectedRoute>} />
             <Route
               path="/caretaker"
               element={
