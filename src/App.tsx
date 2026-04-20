@@ -12,6 +12,10 @@ import Pricing from "./pages/Pricing";
 import NotFound from "./pages/NotFound";
 
 import LandlordDashboard from "./pages/landlord/Dashboard";
+import Properties from "./pages/landlord/Properties";
+import PropertyForm from "./pages/landlord/PropertyForm";
+import PropertyDetail from "./pages/landlord/PropertyDetail";
+import Tenants from "./pages/landlord/Tenants";
 import AdminDashboard from "./pages/admin/Dashboard";
 import CaretakerDashboard from "./pages/caretaker/Dashboard";
 import ServiceProviderDashboard from "./pages/service-provider/Dashboard";
