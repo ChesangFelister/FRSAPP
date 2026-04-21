@@ -89,6 +89,56 @@ export type Database = {
         }
         Relationships: []
       }
+      property_documents: {
+        Row: {
+          category: Database["public"]["Enums"]["document_category"]
+          created_at: string
+          file_path: string
+          file_size: number | null
+          id: string
+          mime_type: string | null
+          name: string
+          notes: string | null
+          owner_id: string
+          property_id: string
+          updated_at: string
+        }
+        Insert: {
+          category?: Database["public"]["Enums"]["document_category"]
+          created_at?: string
+          file_path: string
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          name: string
+          notes?: string | null
+          owner_id: string
+          property_id: string
+          updated_at?: string
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["document_category"]
+          created_at?: string
+          file_path?: string
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          name?: string
+          notes?: string | null
+          owner_id?: string
+          property_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_documents_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       property_images: {
         Row: {
           created_at: string
@@ -221,6 +271,7 @@ export type Database = {
         | "caretaker"
         | "tenant"
         | "service_provider"
+      document_category: "lease" | "inspection" | "certificate" | "other"
       property_status: "active" | "draft" | "archived"
       property_type: "apartment" | "house" | "commercial" | "land" | "other"
       tenant_status: "active" | "notice" | "ended"
@@ -358,6 +409,7 @@ export const Constants = {
         "tenant",
         "service_provider",
       ],
+      document_category: ["lease", "inspection", "certificate", "other"],
       property_status: ["active", "draft", "archived"],
       property_type: ["apartment", "house", "commercial", "land", "other"],
       tenant_status: ["active", "notice", "ended"],
