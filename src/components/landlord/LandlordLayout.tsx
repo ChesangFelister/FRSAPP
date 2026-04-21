@@ -1,5 +1,5 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Building2, Users, LogOut, Menu } from "lucide-react";
+import { LayoutDashboard, Building2, Users, LogOut, Menu, Wallet, CalendarClock } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,8 @@ const nav = [
   { to: "/landlord/dashboard", label: "Overview", icon: LayoutDashboard },
   { to: "/landlord/properties", label: "Properties", icon: Building2 },
   { to: "/landlord/tenants", label: "Tenants", icon: Users },
+  { to: "/landlord/reminders", label: "Reminders", icon: CalendarClock },
+  { to: "/landlord/financials", label: "Financials", icon: Wallet, soon: true },
 ];
 
 export default function LandlordLayout({ children, title, action }: { children: React.ReactNode; title?: string; action?: React.ReactNode }) {
@@ -26,26 +28,38 @@ export default function LandlordLayout({ children, title, action }: { children: 
         mobileOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <Link to="/" className="flex items-center gap-2 px-6 h-16 border-b border-primary-foreground/10">
-          <span className="flex h-8 w-8 items-center justify-center rounded-sm bg-accent text-accent-foreground font-serif text-lg">E</span>
-          <span className="font-serif text-xl">Estate</span>
+          <img src="/frs-logo.png" alt="Flashrentsolution logo" className="h-8 w-8 object-contain bg-primary-foreground/10 rounded-sm p-1" />
+          <span className="font-serif text-xl">Flashrentsolution</span>
         </Link>
 
         <nav className="flex-1 px-3 py-6 space-y-1">
           {nav.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              onClick={() => setMobileOpen(false)}
-              className={({ isActive }) => cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-sm text-sm transition-colors",
-                isActive
-                  ? "bg-accent/15 text-accent border-l-2 border-accent pl-[10px]"
-                  : "text-primary-foreground/75 hover:bg-primary-foreground/5 hover:text-primary-foreground"
-              )}
-            >
-              <item.icon className="h-4 w-4" strokeWidth={1.75} />
-              {item.label}
-            </NavLink>
+            item.soon ? (
+              <div
+                key={item.to}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-sm text-sm text-primary-foreground/50 cursor-not-allowed"
+                aria-disabled="true"
+              >
+                <item.icon className="h-4 w-4" strokeWidth={1.75} />
+                <span>{item.label}</span>
+                <span className="ml-auto text-[10px] uppercase tracking-widest bg-accent/20 text-accent px-1.5 py-0.5 rounded-sm">Soon</span>
+              </div>
+            ) : (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                onClick={() => setMobileOpen(false)}
+                className={({ isActive }) => cn(
+                  "flex items-center gap-3 px-3 py-2.5 rounded-sm text-sm transition-colors",
+                  isActive
+                    ? "bg-accent/15 text-accent border-l-2 border-accent pl-[10px]"
+                    : "text-primary-foreground/75 hover:bg-primary-foreground/5 hover:text-primary-foreground"
+                )}
+              >
+                <item.icon className="h-4 w-4" strokeWidth={1.75} />
+                {item.label}
+              </NavLink>
+            )
           ))}
         </nav>
 

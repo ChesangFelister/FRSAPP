@@ -16,6 +16,7 @@ import Properties from "./pages/landlord/Properties";
 import PropertyForm from "./pages/landlord/PropertyForm";
 import PropertyDetail from "./pages/landlord/PropertyDetail";
 import Tenants from "./pages/landlord/Tenants";
+import Reminders from "./pages/landlord/Reminders";
 import AdminDashboard from "./pages/admin/Dashboard";
 import CaretakerDashboard from "./pages/caretaker/Dashboard";
 import ServiceProviderDashboard from "./pages/service-provider/Dashboard";
@@ -48,6 +49,7 @@ const App = () => (
             <Route path="/landlord/properties/:id" element={<ProtectedRoute allowedRoles={["landlord"]}><PropertyDetail /></ProtectedRoute>} />
             <Route path="/landlord/properties/:id/edit" element={<ProtectedRoute allowedRoles={["landlord"]}><PropertyForm /></ProtectedRoute>} />
             <Route path="/landlord/tenants" element={<ProtectedRoute allowedRoles={["landlord"]}><Tenants /></ProtectedRoute>} />
+            <Route path="/landlord/reminders" element={<ProtectedRoute allowedRoles={["landlord"]}><Reminders /></ProtectedRoute>} />
             <Route
               path="/caretaker"
               element={
