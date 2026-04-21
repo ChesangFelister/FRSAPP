@@ -193,75 +193,111 @@ export default function Tenants() {
         </div>
       )}
 
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setStep("form"); }}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle className="font-serif text-2xl">{editing ? "Edit tenant" : "Add tenant"}</DialogTitle>
-            <DialogDescription>Tenant details and lease information.</DialogDescription>
+            <DialogTitle className="font-serif text-2xl">
+              {step === "confirm" ? "Confirm tenant assignment" : (editing ? "Edit tenant" : "Add tenant")}
+            </DialogTitle>
+            <DialogDescription>
+              {step === "confirm" ? "Review the details below before saving." : "Tenant details and lease information."}
+            </DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleSave} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="t-name">Full name *</Label>
-              <Input id="t-name" required value={form.full_name} onChange={(e) => setForm(f => ({ ...f, full_name: e.target.value }))} />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="t-email">Email</Label>
-                <Input id="t-email" type="email" value={form.email} onChange={(e) => setForm(f => ({ ...f, email: e.target.value }))} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="t-phone">Phone</Label>
-                <Input id="t-phone" value={form.phone} onChange={(e) => setForm(f => ({ ...f, phone: e.target.value }))} placeholder="+254…" />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="t-prop">Property</Label>
-                <Select value={form.property_id} onValueChange={(v) => setForm(f => ({ ...f, property_id: v }))}>
-                  <SelectTrigger id="t-prop"><SelectValue placeholder="Select…" /></SelectTrigger>
-                  <SelectContent>
-                    {properties.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="t-unit">Unit label</Label>
-                <Input id="t-unit" value={form.unit_label} onChange={(e) => setForm(f => ({ ...f, unit_label: e.target.value }))} placeholder="e.g. A4" />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="t-rent">Monthly rent (KSh)</Label>
-                <Input id="t-rent" type="number" min={0} step={100} value={form.monthly_rent_ksh} onChange={(e) => setForm(f => ({ ...f, monthly_rent_ksh: parseFloat(e.target.value) || 0 }))} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="t-status">Status</Label>
-                <Select value={form.status} onValueChange={(v) => setForm(f => ({ ...f, status: v as Status }))}>
-                  <SelectTrigger id="t-status"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="notice">On notice</SelectItem>
-                    <SelectItem value="ended">Ended</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="t-start">Lease start</Label>
-                <Input id="t-start" type="date" value={form.lease_start} onChange={(e) => setForm(f => ({ ...f, lease_start: e.target.value }))} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="t-end">Lease end</Label>
-                <Input id="t-end" type="date" value={form.lease_end} onChange={(e) => setForm(f => ({ ...f, lease_end: e.target.value }))} />
-              </div>
-            </div>
 
-            <DialogFooter className="pt-2">
-              <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-              <Button type="submit" disabled={saving}>{editing ? "Save changes" : "Add tenant"}</Button>
-            </DialogFooter>
-          </form>
+          {step === "form" ? (
+            <form onSubmit={handleReview} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="t-name">Full name *</Label>
+                <Input id="t-name" required value={form.full_name} onChange={(e) => setForm(f => ({ ...f, full_name: e.target.value }))} />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="t-email">Email</Label>
+                  <Input id="t-email" type="email" value={form.email} onChange={(e) => setForm(f => ({ ...f, email: e.target.value }))} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="t-phone">Phone</Label>
+                  <Input id="t-phone" value={form.phone} onChange={(e) => setForm(f => ({ ...f, phone: e.target.value }))} placeholder="+254…" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="t-prop">Property *</Label>
+                  <Select value={form.property_id} onValueChange={(v) => setForm(f => ({ ...f, property_id: v }))}>
+                    <SelectTrigger id="t-prop"><SelectValue placeholder="Select…" /></SelectTrigger>
+                    <SelectContent>
+                      {properties.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="t-unit">Unit label</Label>
+                  <Input id="t-unit" value={form.unit_label} onChange={(e) => setForm(f => ({ ...f, unit_label: e.target.value }))} placeholder="e.g. A4" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="t-rent">Monthly rent (KSh)</Label>
+                  <Input id="t-rent" type="number" min={0} step={100} value={form.monthly_rent_ksh} onChange={(e) => setForm(f => ({ ...f, monthly_rent_ksh: parseFloat(e.target.value) || 0 }))} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="t-status">Status</Label>
+                  <Select value={form.status} onValueChange={(v) => setForm(f => ({ ...f, status: v as Status }))}>
+                    <SelectTrigger id="t-status"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="notice">On notice</SelectItem>
+                      <SelectItem value="ended">Ended</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="t-start">Lease start</Label>
+                  <Input id="t-start" type="date" value={form.lease_start} onChange={(e) => setForm(f => ({ ...f, lease_start: e.target.value }))} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="t-end">Lease end</Label>
+                  <Input id="t-end" type="date" value={form.lease_end} onChange={(e) => setForm(f => ({ ...f, lease_end: e.target.value }))} />
+                </div>
+              </div>
+
+              <DialogFooter className="pt-2">
+                <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+                <Button type="submit">Review →</Button>
+              </DialogFooter>
+            </form>
+          ) : (
+            <div className="space-y-5">
+              <div className="bg-accent-soft/40 border border-accent/30 p-4 flex gap-3">
+                <CheckCircle2 className="h-5 w-5 text-accent shrink-0 mt-0.5" />
+                <div className="text-sm">
+                  <div className="font-medium mb-0.5">{form.full_name}</div>
+                  <div className="text-muted-foreground">
+                    will be linked to <span className="font-medium text-foreground">{propMap[form.property_id] ?? "—"}</span>
+                    {form.unit_label && <> · unit <span className="font-medium text-foreground">{form.unit_label}</span></>}
+                  </div>
+                </div>
+              </div>
+
+              <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm border border-border bg-card p-4">
+                <div><dt className="text-xs uppercase tracking-wider text-muted-foreground">Contact</dt><dd>{form.email || form.phone || "—"}</dd></div>
+                <div><dt className="text-xs uppercase tracking-wider text-muted-foreground">Status</dt><dd className="capitalize">{form.status}</dd></div>
+                <div><dt className="text-xs uppercase tracking-wider text-muted-foreground">Monthly rent</dt><dd>{formatKsh(form.monthly_rent_ksh)}</dd></div>
+                <div><dt className="text-xs uppercase tracking-wider text-muted-foreground">Lease</dt><dd>{form.lease_start || "—"} → {form.lease_end || "—"}</dd></div>
+              </dl>
+
+              <DialogFooter className="pt-2">
+                <Button type="button" variant="outline" onClick={() => setStep("form")}>
+                  <ArrowLeft className="h-4 w-4" /> Back to edit
+                </Button>
+                <Button type="button" onClick={handleConfirm} disabled={saving}>
+                  {saving ? "Saving…" : (editing ? "Confirm changes" : "Confirm & assign")}
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </LandlordLayout>
