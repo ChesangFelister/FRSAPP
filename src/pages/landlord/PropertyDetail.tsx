@@ -5,6 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import LandlordLayout from "@/components/landlord/LandlordLayout";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import PropertyDocuments from "@/components/landlord/PropertyDocuments";
 import { formatKsh } from "@/lib/currency";
 
 export default function PropertyDetail() {
@@ -90,34 +92,47 @@ export default function PropertyDetail() {
         ))}
       </div>
 
-      {/* Tenants */}
-      <div className="bg-card border border-border">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
-          <h3 className="font-serif text-xl">Tenants at this property</h3>
-          <Button asChild size="sm" variant="outline"><Link to="/landlord/tenants">Manage tenants →</Link></Button>
-        </div>
-        {tenants.length === 0 ? (
-          <div className="p-12 text-center text-muted-foreground text-sm">No tenants yet for this property.</div>
-        ) : (
-          <ul className="divide-y divide-border">
-            {tenants.map((t) => (
-              <li key={t.id} className="flex items-center gap-4 p-4">
-                <div className="h-10 w-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-serif text-sm">
-                  {t.full_name?.[0]?.toUpperCase() ?? "?"}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="font-medium truncate">{t.full_name}</div>
-                  <div className="text-sm text-muted-foreground truncate">{t.unit_label ?? "—"} · {t.email ?? t.phone ?? "no contact"}</div>
-                </div>
-                <div className="text-right">
-                  <div className="font-medium text-sm">{formatKsh(t.monthly_rent_ksh)}</div>
-                  <div className="text-xs text-muted-foreground capitalize">{t.status}</div>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+      {/* Tabs */}
+      <Tabs defaultValue="tenants" className="w-full">
+        <TabsList className="bg-card border border-border rounded-none h-auto p-0">
+          <TabsTrigger value="tenants" className="rounded-none data-[state=active]:bg-background data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-accent px-6 py-3">Tenants</TabsTrigger>
+          <TabsTrigger value="documents" className="rounded-none data-[state=active]:bg-background data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-accent px-6 py-3">Documents</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="tenants" className="mt-6">
+          <div className="bg-card border border-border">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+              <h3 className="font-serif text-xl">Tenants at this property</h3>
+              <Button asChild size="sm" variant="outline"><Link to="/landlord/tenants">Manage tenants →</Link></Button>
+            </div>
+            {tenants.length === 0 ? (
+              <div className="p-12 text-center text-muted-foreground text-sm">No tenants yet for this property.</div>
+            ) : (
+              <ul className="divide-y divide-border">
+                {tenants.map((t) => (
+                  <li key={t.id} className="flex items-center gap-4 p-4">
+                    <div className="h-10 w-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-serif text-sm">
+                      {t.full_name?.[0]?.toUpperCase() ?? "?"}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium truncate">{t.full_name}</div>
+                      <div className="text-sm text-muted-foreground truncate">{t.unit_label ?? "—"} · {t.email ?? t.phone ?? "no contact"}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-medium text-sm">{formatKsh(t.monthly_rent_ksh)}</div>
+                      <div className="text-xs text-muted-foreground capitalize">{t.status}</div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="documents" className="mt-6">
+          <PropertyDocuments propertyId={property.id} />
+        </TabsContent>
+      </Tabs>
     </LandlordLayout>
   );
 }
