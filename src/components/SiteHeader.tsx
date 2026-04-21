@@ -23,9 +23,31 @@ export default function SiteHeader() {
         </Link>
 
         <nav className="hidden md:flex items-center gap-8 text-sm">
-          <Link to="/" className="text-muted-foreground hover:text-foreground transition-colors">Platform</Link>
-          <Link to="/pricing" className="text-muted-foreground hover:text-foreground transition-colors">Pricing</Link>
-          <a href="#features" className="text-muted-foreground hover:text-foreground transition-colors">Features</a>
+          {user && roles.includes("admin") && (
+            <>
+              <Link to="/admin" className="text-muted-foreground hover:text-foreground transition-colors">Admin</Link>
+            </>
+          )}
+          {user && roles.includes("landlord") && (
+            <>
+              <Link to="/landlord/dashboard" className="text-muted-foreground hover:text-foreground transition-colors">Dashboard</Link>
+              <Link to="/landlord/properties" className="text-muted-foreground hover:text-foreground transition-colors">Properties</Link>
+              <Link to="/landlord/tenants" className="text-muted-foreground hover:text-foreground transition-colors">Tenants</Link>
+            </>
+          )}
+          {user && roles.includes("caretaker") && !roles.includes("landlord") && (
+            <Link to="/caretaker" className="text-muted-foreground hover:text-foreground transition-colors">Caretaker</Link>
+          )}
+          {user && roles.includes("service_provider") && !roles.includes("landlord") && (
+            <Link to="/service-provider" className="text-muted-foreground hover:text-foreground transition-colors">Service</Link>
+          )}
+          {!user && (
+            <>
+              <Link to="/" className="text-muted-foreground hover:text-foreground transition-colors">Platform</Link>
+              <Link to="/pricing" className="text-muted-foreground hover:text-foreground transition-colors">Pricing</Link>
+              <a href="#features" className="text-muted-foreground hover:text-foreground transition-colors">Features</a>
+            </>
+          )}
         </nav>
 
         <div className="flex items-center gap-2">
