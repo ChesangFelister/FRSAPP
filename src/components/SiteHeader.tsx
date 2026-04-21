@@ -18,8 +18,8 @@ export default function SiteHeader() {
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/85 backdrop-blur">
       <div className="container-wide flex h-16 items-center justify-between">
         <Link to="/" className="flex items-center gap-2">
-          <span className="flex h-8 w-8 items-center justify-center rounded-sm bg-primary text-primary-foreground font-serif text-lg">E</span>
-          <span className="font-serif text-xl tracking-tight">Estate</span>
+          <img src="/frs-logo.png" alt="Flashrentsolution logo" className="h-9 w-9 object-contain" />
+          <span className="font-serif text-xl tracking-tight">Flashrentsolution</span>
         </Link>
 
         <nav className="hidden md:flex items-center gap-8 text-sm">
