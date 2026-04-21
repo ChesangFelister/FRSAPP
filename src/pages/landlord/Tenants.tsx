@@ -51,6 +51,7 @@ export default function Tenants() {
   const [editing, setEditing] = useState<Tenant | null>(null);
   const [form, setForm] = useState(blankForm);
   const [saving, setSaving] = useState(false);
+  const [step, setStep] = useState<"form" | "confirm">("form");
 
   const load = async () => {
     if (!user) return;
