@@ -9,6 +9,8 @@ const nav = [
   { to: "/landlord/dashboard", label: "Overview", icon: LayoutDashboard },
   { to: "/landlord/properties", label: "Properties", icon: Building2 },
   { to: "/landlord/tenants", label: "Tenants", icon: Users },
+  { to: "/landlord/reminders", label: "Reminders", icon: CalendarClock },
+  { to: "/landlord/financials", label: "Financials", icon: Wallet, soon: true },
 ];
 
 export default function LandlordLayout({ children, title, action }: { children: React.ReactNode; title?: string; action?: React.ReactNode }) {
