@@ -33,7 +33,7 @@ export default function SiteFooter() {
       </div>
       <div className="border-t border-primary-foreground/10">
         <div className="container-wide py-6 text-xs text-primary-foreground/60 flex flex-col sm:flex-row justify-between gap-2">
-          <span>© {new Date().getFullYear()} Estate. All rights reserved.</span>
+          <span>© {new Date().getFullYear()} Flashrentsolution. All rights reserved.</span>
           <span className="font-serif italic">Property management, refined.</span>
         </div>
       </div>
