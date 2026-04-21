@@ -1,5 +1,5 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Building2, Users, LogOut, Menu } from "lucide-react";
+import { LayoutDashboard, Building2, Users, LogOut, Menu, Wallet, CalendarClock } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
