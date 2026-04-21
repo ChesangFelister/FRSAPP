@@ -35,10 +35,7 @@ export default function SiteHeader() {
               <Button variant="outline" size="sm" onClick={async () => { await signOut(); navigate("/"); }}>Sign out</Button>
             </>
           ) : (
-            <>
-              <Button variant="ghost" size="sm" onClick={() => navigate("/auth")}>Sign in</Button>
-              <Button size="sm" onClick={() => navigate("/auth?mode=register")}>Get started</Button>
-            </>
+            <Button size="sm" onClick={() => navigate("/pricing")}>Subscribe to start</Button>
           )}
         </div>
       </div>
