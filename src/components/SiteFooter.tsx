@@ -6,8 +6,8 @@ export default function SiteFooter() {
       <div className="container-wide py-16 grid gap-12 md:grid-cols-4">
         <div className="md:col-span-2">
           <div className="flex items-center gap-2 mb-4">
-            <span className="flex h-9 w-9 items-center justify-center rounded-sm bg-accent text-accent-foreground font-serif text-lg">E</span>
-            <span className="font-serif text-2xl">Estate</span>
+            <img src="/frs-logo.png" alt="Flashrentsolution logo" className="h-10 w-10 object-contain bg-primary-foreground/10 rounded-sm p-1" />
+            <span className="font-serif text-2xl">Flashrentsolution</span>
           </div>
           <p className="text-sm text-primary-foreground/70 max-w-sm leading-relaxed">
             The institutional-grade operating system for residential property portfolios. Trusted by landlords managing buildings of every scale.
