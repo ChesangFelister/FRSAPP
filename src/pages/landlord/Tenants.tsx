@@ -69,6 +69,7 @@ export default function Tenants() {
   const openNew = () => {
     setEditing(null);
     setForm({ ...blankForm, property_id: properties[0]?.id ?? "" });
+    setStep("form");
     setOpen(true);
   };
 
@@ -80,11 +81,18 @@ export default function Tenants() {
       monthly_rent_ksh: Number(t.monthly_rent_ksh), lease_start: t.lease_start ?? "",
       lease_end: t.lease_end ?? "", status: t.status,
     });
+    setStep("form");
     setOpen(true);
   };
 
-  const handleSave = async (e: React.FormEvent) => {
+  const handleReview = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!form.full_name.trim()) { toast.error("Tenant name is required."); return; }
+    if (!form.property_id) { toast.error("Select a property to assign this tenant to."); return; }
+    setStep("confirm");
+  };
+
+  const handleConfirm = async () => {
     if (!user) return;
     setSaving(true);
     const payload = {
@@ -104,8 +112,16 @@ export default function Tenants() {
       : await supabase.from("tenants").insert(payload);
     setSaving(false);
     if (error) { toast.error(error.message); return; }
-    toast.success(editing ? "Tenant updated" : "Tenant added");
+    const propName = propMap[form.property_id] ?? "property";
+    toast.success(editing ? "Tenant updated" : `${form.full_name} assigned to ${propName}`, {
+      description: "View on the property detail page.",
+      action: form.property_id ? {
+        label: "View property",
+        onClick: () => { window.location.href = `/landlord/properties/${form.property_id}`; },
+      } : undefined,
+    });
     setOpen(false);
+    setStep("form");
     load();
   };
 
