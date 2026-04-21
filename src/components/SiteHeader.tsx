@@ -1,10 +1,15 @@
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function SiteHeader() {
   const { user, roles, signOut } = useAuth();
   const navigate = useNavigate();
+  const [pendingCount, setPendingCount] = useState(0);
+
+  const isLandlord = !!user && roles.includes("landlord");
 
   const dashboardPath = (() => {
     if (roles.includes("admin")) return "/admin";
@@ -13,6 +18,36 @@ export default function SiteHeader() {
     if (roles.includes("service_provider")) return "/service-provider";
     return "/";
   })();
+
+  useEffect(() => {
+    if (!isLandlord || !user) {
+      setPendingCount(0);
+      return;
+    }
+
+    const load = async () => {
+      const { count } = await supabase
+        .from("tenants")
+        .select("id", { count: "exact", head: true })
+        .eq("owner_id", user.id)
+        .eq("status", "notice");
+      setPendingCount(count ?? 0);
+    };
+    load();
+
+    const channel = supabase
+      .channel("tenants-pending")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "tenants", filter: `owner_id=eq.${user.id}` },
+        () => load()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [isLandlord, user]);
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/85 backdrop-blur">
@@ -24,15 +59,26 @@ export default function SiteHeader() {
 
         <nav className="hidden md:flex items-center gap-8 text-sm">
           {user && roles.includes("admin") && (
-            <>
-              <Link to="/admin" className="text-muted-foreground hover:text-foreground transition-colors">Admin</Link>
-            </>
+            <Link to="/admin" className="text-muted-foreground hover:text-foreground transition-colors">Admin</Link>
           )}
-          {user && roles.includes("landlord") && (
+          {isLandlord && (
             <>
               <Link to="/landlord/dashboard" className="text-muted-foreground hover:text-foreground transition-colors">Dashboard</Link>
               <Link to="/landlord/properties" className="text-muted-foreground hover:text-foreground transition-colors">Properties</Link>
-              <Link to="/landlord/tenants" className="text-muted-foreground hover:text-foreground transition-colors">Tenants</Link>
+              <Link
+                to="/landlord/tenants"
+                className="text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-2"
+              >
+                Tenants
+                {pendingCount > 0 && (
+                  <span
+                    aria-label={`${pendingCount} pending tenant actions`}
+                    className="inline-flex min-w-[1.25rem] h-5 items-center justify-center rounded-full bg-accent px-1.5 text-[10px] font-medium text-accent-foreground"
+                  >
+                    {pendingCount}
+                  </span>
+                )}
+              </Link>
             </>
           )}
           {user && roles.includes("caretaker") && !roles.includes("landlord") && (
