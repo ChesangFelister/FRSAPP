@@ -21,6 +21,7 @@ interface Reminder {
 }
 
 const storageKey = (uid: string) => `frs_reminders_${uid}`;
+const notifiedKey = (uid: string) => `frs_reminders_notified_${uid}`;
 
 export default function Reminders() {
   const { user } = useAuth();
@@ -29,6 +30,9 @@ export default function Reminders() {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [notes, setNotes] = useState("");
+  const [notifPermission, setNotifPermission] = useState<NotificationPermission>(
+    typeof Notification !== "undefined" ? Notification.permission : "denied"
+  );
 
   useEffect(() => {
     if (!user) return;
@@ -42,6 +46,58 @@ export default function Reminders() {
     setReminders(next);
     if (user) localStorage.setItem(storageKey(user.id), JSON.stringify(next));
   };
+
+  const enableNotifications = async () => {
+    if (typeof Notification === "undefined") {
+      toast.error("Notifications not supported in this browser");
+      return;
+    }
+    try {
+      const perm = await Notification.requestPermission();
+      setNotifPermission(perm);
+      if (perm === "granted") {
+        toast.success("Notifications enabled", { description: "You'll be alerted for upcoming reminders." });
+        new Notification("Flashrentsolution", { body: "Reminder notifications are now active." });
+      } else {
+        toast.error("Notifications blocked", { description: "Enable them in your browser settings." });
+      }
+    } catch {
+      toast.error("Could not enable notifications");
+    }
+  };
+
+  // Check & fire notifications for reminders due today or tomorrow
+  useEffect(() => {
+    if (!user || notifPermission !== "granted" || reminders.length === 0) return;
+
+    const fireNotifications = () => {
+      const raw = localStorage.getItem(notifiedKey(user.id));
+      const notified = new Set<string>(raw ? JSON.parse(raw) : []);
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+
+      reminders.forEach((r) => {
+        const d = new Date(r.date);
+        const diff = differenceInCalendarDays(d, today);
+        if (diff !== 0 && diff !== 1) return;
+        const key = `${r.id}:${diff}`;
+        if (notified.has(key)) return;
+        const when = diff === 0 ? "today" : "tomorrow";
+        try {
+          new Notification(`Reminder ${when}: ${r.title}`, {
+            body: r.notes || `${format(d, "PPP")}`,
+            tag: key,
+          });
+          notified.add(key);
+        } catch { /* ignore */ }
+      });
+
+      localStorage.setItem(notifiedKey(user.id), JSON.stringify([...notified]));
+    };
+
+    fireNotifications();
+    const id = window.setInterval(fireNotifications, 60 * 60 * 1000); // hourly
+    return () => window.clearInterval(id);
+  }, [user, reminders, notifPermission]);
 
   const dayHasReminder = useMemo(() => {
     const set = new Set(reminders.map(r => r.date));
