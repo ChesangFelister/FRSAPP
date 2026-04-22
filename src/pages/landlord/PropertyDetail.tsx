@@ -82,6 +82,27 @@ export default function PropertyDetail() {
         </div>
       </div>
 
+      {/* Caretaker */}
+      <div className="bg-card border border-border p-5 mb-8 flex items-center gap-4">
+        <div className="h-11 w-11 rounded-full bg-secondary flex items-center justify-center">
+          <HardHat className="h-5 w-5 text-accent" strokeWidth={1.75} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="text-xs uppercase tracking-widest text-muted-foreground mb-0.5">Assigned caretaker</div>
+          {caretaker ? (
+            <>
+              <div className="font-medium truncate">{caretaker.full_name}</div>
+              <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground mt-0.5">
+                {caretaker.phone && <span className="inline-flex items-center gap-1"><Phone className="h-3 w-3" />{caretaker.phone}</span>}
+                {caretaker.email && <span className="inline-flex items-center gap-1"><Mail className="h-3 w-3" />{caretaker.email}</span>}
+              </div>
+            </>
+          ) : (
+            <div className="text-sm text-muted-foreground">No caretaker assigned. <Link to={`/landlord/properties/${property.id}/edit`} className="text-accent hover:underline">Assign one →</Link></div>
+          )}
+        </div>
+      </div>
+
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {[
