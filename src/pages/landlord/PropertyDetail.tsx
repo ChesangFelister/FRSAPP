@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, MapPin, Building2, Pencil, Users, Coins, TrendingUp } from "lucide-react";
+import { ArrowLeft, MapPin, Building2, Pencil, Users, Coins, TrendingUp, HardHat, Phone, Mail } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import LandlordLayout from "@/components/landlord/LandlordLayout";
@@ -16,6 +16,8 @@ export default function PropertyDetail() {
   const [tenants, setTenants] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const [caretaker, setCaretaker] = useState<any>(null);
+
   useEffect(() => {
     if (!id || !user) return;
     const load = async () => {
@@ -25,6 +27,10 @@ export default function PropertyDetail() {
       ]);
       setProperty(p);
       setTenants(t ?? []);
+      if (p && (p as any).caretaker_id) {
+        const { data: c } = await supabase.from("caretakers").select("*").eq("id", (p as any).caretaker_id).maybeSingle();
+        setCaretaker(c);
+      }
       setLoading(false);
     };
     load();
@@ -73,6 +79,27 @@ export default function PropertyDetail() {
             <div className="text-xs uppercase tracking-widest text-muted-foreground mb-1">Listed at</div>
             <div className="font-serif text-3xl">{formatKsh(property.monthly_rent_ksh)}<span className="text-sm text-muted-foreground font-sans"> / month</span></div>
           </div>
+        </div>
+      </div>
+
+      {/* Caretaker */}
+      <div className="bg-card border border-border p-5 mb-8 flex items-center gap-4">
+        <div className="h-11 w-11 rounded-full bg-secondary flex items-center justify-center">
+          <HardHat className="h-5 w-5 text-accent" strokeWidth={1.75} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="text-xs uppercase tracking-widest text-muted-foreground mb-0.5">Assigned caretaker</div>
+          {caretaker ? (
+            <>
+              <div className="font-medium truncate">{caretaker.full_name}</div>
+              <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground mt-0.5">
+                {caretaker.phone && <span className="inline-flex items-center gap-1"><Phone className="h-3 w-3" />{caretaker.phone}</span>}
+                {caretaker.email && <span className="inline-flex items-center gap-1"><Mail className="h-3 w-3" />{caretaker.email}</span>}
+              </div>
+            </>
+          ) : (
+            <div className="text-sm text-muted-foreground">No caretaker assigned. <Link to={`/landlord/properties/${property.id}/edit`} className="text-accent hover:underline">Assign one →</Link></div>
+          )}
         </div>
       </div>
 
