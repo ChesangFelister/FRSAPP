@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
+import HomeDashboardSummary from "@/components/HomeDashboardSummary";
 import heroImage from "@/assets/hero-building.jpg";
 
 const features = [
@@ -25,6 +26,8 @@ export default function Index() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <SiteHeader />
+
+      <HomeDashboardSummary />
 
       {/* HERO */}
       <section className="relative overflow-hidden">
