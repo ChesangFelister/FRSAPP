@@ -65,7 +65,8 @@ export default function Auth() {
       if (error.message.toLowerCase().includes("already")) toast.error("This email is already registered. Try signing in.");
       else toast.error(error.message);
     } else {
-      toast.success("Account created — welcome to Estate.");
+      setJustRegistered(true);
+      toast.success("Account created — welcome to Flashrentsolution.");
     }
   };
 
