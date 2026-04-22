@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      caretakers: {
+        Row: {
+          created_at: string
+          email: string | null
+          full_name: string
+          id: string
+          notes: string | null
+          owner_id: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          full_name: string
+          id?: string
+          notes?: string | null
+          owner_id: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          full_name?: string
+          id?: string
+          notes?: string | null
+          owner_id?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -44,6 +77,7 @@ export type Database = {
       properties: {
         Row: {
           address: string
+          caretaker_id: string | null
           city: string
           cover_image_url: string | null
           created_at: string
@@ -59,6 +93,7 @@ export type Database = {
         }
         Insert: {
           address: string
+          caretaker_id?: string | null
           city: string
           cover_image_url?: string | null
           created_at?: string
@@ -74,6 +109,7 @@ export type Database = {
         }
         Update: {
           address?: string
+          caretaker_id?: string | null
           city?: string
           cover_image_url?: string | null
           created_at?: string
@@ -87,7 +123,15 @@ export type Database = {
           units_count?: number
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "properties_caretaker_id_fkey"
+            columns: ["caretaker_id"]
+            isOneToOne: false
+            referencedRelation: "caretakers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       property_documents: {
         Row: {
