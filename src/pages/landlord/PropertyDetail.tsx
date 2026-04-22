@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, MapPin, Building2, Pencil, Users, Coins, TrendingUp } from "lucide-react";
+import { ArrowLeft, MapPin, Building2, Pencil, Users, Coins, TrendingUp, HardHat, Phone, Mail } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import LandlordLayout from "@/components/landlord/LandlordLayout";
