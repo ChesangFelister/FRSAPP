@@ -29,12 +29,18 @@ interface FormState {
   status: PropertyStatus;
   description: string;
   cover_image_url: string | null;
+  caretaker_id: string | null;
 }
 
 const empty: FormState = {
   name: "", address: "", city: "", property_type: "apartment",
   units_count: 1, monthly_rent_ksh: 0, status: "active", description: "", cover_image_url: null,
+  caretaker_id: null,
 };
+
+interface CaretakerOpt { id: string; full_name: string; }
+
+const NONE = "__none__";
 
 export default function PropertyForm() {
   const { id } = useParams();
@@ -44,6 +50,13 @@ export default function PropertyForm() {
   const [form, setForm] = useState<FormState>(empty);
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
+  const [caretakers, setCaretakers] = useState<CaretakerOpt[]>([]);
+
+  useEffect(() => {
+    if (!user) return;
+    supabase.from("caretakers").select("id, full_name").eq("owner_id", user.id).order("full_name")
+      .then(({ data }) => setCaretakers((data as CaretakerOpt[]) ?? []));
+  }, [user]);
 
   useEffect(() => {
     if (isNew || !user) return;
@@ -54,6 +67,7 @@ export default function PropertyForm() {
         property_type: data.property_type, units_count: data.units_count,
         monthly_rent_ksh: Number(data.monthly_rent_ksh), status: data.status,
         description: data.description ?? "", cover_image_url: data.cover_image_url,
+        caretaker_id: (data as any).caretaker_id ?? null,
       });
       setLoading(false);
     });
@@ -160,6 +174,27 @@ export default function PropertyForm() {
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">Active properties appear in your public listings.</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="caretaker">Assigned caretaker</Label>
+              <Select
+                value={form.caretaker_id ?? NONE}
+                onValueChange={(v) => update("caretaker_id", v === NONE ? null : v)}
+              >
+                <SelectTrigger id="caretaker"><SelectValue placeholder="No caretaker" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NONE}>No caretaker</SelectItem>
+                  {caretakers.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>{c.full_name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                {caretakers.length === 0
+                  ? <>No caretakers yet. <Link to="/landlord/caretakers" className="text-accent hover:underline">Add one →</Link></>
+                  : "Manage caretakers from the Caretakers page."}
+              </p>
             </div>
           </div>
 

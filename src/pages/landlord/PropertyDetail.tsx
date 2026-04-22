@@ -16,6 +16,8 @@ export default function PropertyDetail() {
   const [tenants, setTenants] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const [caretaker, setCaretaker] = useState<any>(null);
+
   useEffect(() => {
     if (!id || !user) return;
     const load = async () => {
@@ -25,6 +27,10 @@ export default function PropertyDetail() {
       ]);
       setProperty(p);
       setTenants(t ?? []);
+      if (p && (p as any).caretaker_id) {
+        const { data: c } = await supabase.from("caretakers").select("*").eq("id", (p as any).caretaker_id).maybeSingle();
+        setCaretaker(c);
+      }
       setLoading(false);
     };
     load();
