@@ -17,19 +17,11 @@ export default function Auth() {
   const [tab, setTab] = useState(initialTab);
   const [justRegistered, setJustRegistered] = useState(false);
 
-  // Redirect signed-in users — to landing after a fresh signup, to dashboard on login
+  // Always send signed-in users to the home page — they can open their dashboard from the header.
   useEffect(() => {
     if (!user) return;
-    if (justRegistered) {
-      navigate("/", { replace: true });
-      return;
-    }
-    if (roles.includes("admin")) navigate("/admin", { replace: true });
-    else if (roles.includes("landlord")) navigate("/landlord/dashboard", { replace: true });
-    else if (roles.includes("caretaker")) navigate("/caretaker", { replace: true });
-    else if (roles.includes("service_provider")) navigate("/service-provider", { replace: true });
-    else navigate("/", { replace: true });
-  }, [user, roles, navigate, justRegistered]);
+    navigate("/", { replace: true });
+  }, [user, navigate]);
 
   // Login state
   const [loginEmail, setLoginEmail] = useState("");
