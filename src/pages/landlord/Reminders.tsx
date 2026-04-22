@@ -139,33 +139,44 @@ export default function Reminders() {
     <LandlordLayout
       title="Reminders"
       action={
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button><Plus className="h-4 w-4" /> New reminder</Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>New reminder</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="r-title">Title</Label>
-                <Input id="r-title" value={title} onChange={e => setTitle(e.target.value)} placeholder="Rent collection, inspection…" />
+        <div className="flex items-center gap-2">
+          {notifPermission === "granted" ? (
+            <Button variant="outline" disabled className="gap-2">
+              <BellRing className="h-4 w-4 text-accent" /> Alerts on
+            </Button>
+          ) : (
+            <Button variant="outline" onClick={enableNotifications} className="gap-2">
+              <BellOff className="h-4 w-4" /> Enable alerts
+            </Button>
+          )}
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button><Plus className="h-4 w-4" /> New reminder</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>New reminder</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="r-title">Title</Label>
+                  <Input id="r-title" value={title} onChange={e => setTitle(e.target.value)} placeholder="Rent collection, inspection…" />
+                </div>
+                <div>
+                  <Label htmlFor="r-notes">Notes (optional)</Label>
+                  <Textarea id="r-notes" value={notes} onChange={e => setNotes(e.target.value)} rows={3} />
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  Date: <span className="text-foreground">{selected ? format(selected, "PPP") : "—"}</span>
+                </div>
               </div>
-              <div>
-                <Label htmlFor="r-notes">Notes (optional)</Label>
-                <Textarea id="r-notes" value={notes} onChange={e => setNotes(e.target.value)} rows={3} />
-              </div>
-              <div className="text-sm text-muted-foreground">
-                Date: <span className="text-foreground">{selected ? format(selected, "PPP") : "—"}</span>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-              <Button onClick={addReminder}>Save reminder</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+                <Button onClick={addReminder}>Save reminder</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
       }
     >
       <div className="mb-10">
