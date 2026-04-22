@@ -15,17 +15,21 @@ export default function Auth() {
   const { user, roles } = useAuth();
   const initialTab = params.get("mode") === "register" ? "register" : "login";
   const [tab, setTab] = useState(initialTab);
+  const [justRegistered, setJustRegistered] = useState(false);
 
-  // Redirect signed-in users to their dashboard
+  // Redirect signed-in users — to landing after a fresh signup, to dashboard on login
   useEffect(() => {
-    if (user) {
-      if (roles.includes("admin")) navigate("/admin", { replace: true });
-      else if (roles.includes("landlord")) navigate("/landlord/dashboard", { replace: true });
-      else if (roles.includes("caretaker")) navigate("/caretaker", { replace: true });
-      else if (roles.includes("service_provider")) navigate("/service-provider", { replace: true });
-      else navigate("/", { replace: true });
+    if (!user) return;
+    if (justRegistered) {
+      navigate("/", { replace: true });
+      return;
     }
-  }, [user, roles, navigate]);
+    if (roles.includes("admin")) navigate("/admin", { replace: true });
+    else if (roles.includes("landlord")) navigate("/landlord/dashboard", { replace: true });
+    else if (roles.includes("caretaker")) navigate("/caretaker", { replace: true });
+    else if (roles.includes("service_provider")) navigate("/service-provider", { replace: true });
+    else navigate("/", { replace: true });
+  }, [user, roles, navigate, justRegistered]);
 
   // Login state
   const [loginEmail, setLoginEmail] = useState("");
