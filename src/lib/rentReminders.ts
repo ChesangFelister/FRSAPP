@@ -21,19 +21,19 @@ interface RentRow {
   tenant_name: string;
 }
 
-const STORAGE_KEY = "frs_reminders_v1";
+const storageKey = (uid: string) => `frs_reminders_${uid}`;
 
-function loadAll(): Reminder[] {
+function loadAll(uid: string): Reminder[] {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(storageKey(uid));
     return raw ? (JSON.parse(raw) as Reminder[]) : [];
   } catch {
     return [];
   }
 }
 
-function saveAll(items: Reminder[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+function saveAll(uid: string, items: Reminder[]) {
+  localStorage.setItem(storageKey(uid), JSON.stringify(items));
 }
 
 const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
@@ -49,9 +49,9 @@ function daysBetween(a: Date, b: Date) {
  *  - rent already late
  * Returns the number of new reminders added.
  */
-export function syncRentReminders(payments: RentRow[]): number {
-  if (!payments?.length) return 0;
-  const existing = loadAll();
+export function syncRentReminders(uid: string, payments: RentRow[]): number {
+  if (!uid || !payments?.length) return 0;
+  const existing = loadAll(uid);
   const existingIds = new Set(existing.map(r => r.id));
   const today = new Date();
   const additions: Reminder[] = [];
@@ -95,7 +95,7 @@ export function syncRentReminders(payments: RentRow[]): number {
   }
 
   if (additions.length) {
-    saveAll([...additions, ...existing]);
+    saveAll(uid, [...additions, ...existing]);
   }
   return additions.length;
 }
