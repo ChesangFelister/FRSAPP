@@ -251,7 +251,14 @@ export default function Payments() {
   return (
     <LandlordLayout
       title="Payments"
-      action={<Button onClick={openNew} disabled={tenants.length === 0}><Plus className="h-4 w-4" />Record payment</Button>}
+      action={
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={generateThisMonth} disabled={tenants.length === 0}>
+            <RefreshCw className="h-4 w-4" />Generate this month
+          </Button>
+          <Button onClick={openNew} disabled={tenants.length === 0}><Plus className="h-4 w-4" />Record payment</Button>
+        </div>
+      }
     >
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -326,6 +333,11 @@ export default function Payments() {
                       <div className="flex justify-end gap-1">
                         {p.status !== "paid" && (
                           <Button size="sm" variant="ghost" onClick={() => markPaid(p)}>Mark paid</Button>
+                        )}
+                        {Number(p.amount_paid) > 0 && (
+                          <Button size="sm" variant="ghost" onClick={() => downloadReceipt(p)} title="Download receipt PDF">
+                            <FileDown className="h-4 w-4" />
+                          </Button>
                         )}
                         <Button size="sm" variant="ghost" onClick={() => openEdit(p)}><Pencil className="h-4 w-4" /></Button>
                         <Button size="sm" variant="ghost" onClick={() => handleDelete(p)}><Trash2 className="h-4 w-4" /></Button>
