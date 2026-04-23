@@ -53,6 +53,7 @@ const App = () => (
             <Route path="/landlord/tenants" element={<ProtectedRoute allowedRoles={["landlord"]}><Tenants /></ProtectedRoute>} />
             <Route path="/landlord/caretakers" element={<ProtectedRoute allowedRoles={["landlord"]}><Caretakers /></ProtectedRoute>} />
             <Route path="/landlord/reminders" element={<ProtectedRoute allowedRoles={["landlord"]}><Reminders /></ProtectedRoute>} />
+            <Route path="/landlord/payments" element={<ProtectedRoute allowedRoles={["landlord"]}><Payments /></ProtectedRoute>} />
             <Route
               path="/caretaker"
               element={
