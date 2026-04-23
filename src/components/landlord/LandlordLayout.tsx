@@ -10,6 +10,7 @@ const nav = [
   { to: "/landlord/properties", label: "Properties", icon: Building2 },
   { to: "/landlord/tenants", label: "Tenants", icon: Users },
   { to: "/landlord/caretakers", label: "Caretakers", icon: HardHat },
+  { to: "/landlord/payments", label: "Payments", icon: Receipt },
   { to: "/landlord/reminders", label: "Reminders", icon: CalendarClock },
   { to: "/landlord/financials", label: "Financials", icon: Wallet, soon: true },
 ];
