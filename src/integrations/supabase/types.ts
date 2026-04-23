@@ -215,6 +215,78 @@ export type Database = {
           },
         ]
       }
+      rent_payments: {
+        Row: {
+          amount_due: number
+          amount_paid: number
+          created_at: string
+          due_date: string
+          id: string
+          method: string | null
+          notes: string | null
+          owner_id: string
+          paid_date: string | null
+          period_month: number
+          period_year: number
+          property_id: string | null
+          reference: string | null
+          status: Database["public"]["Enums"]["payment_status"]
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount_due?: number
+          amount_paid?: number
+          created_at?: string
+          due_date: string
+          id?: string
+          method?: string | null
+          notes?: string | null
+          owner_id: string
+          paid_date?: string | null
+          period_month: number
+          period_year: number
+          property_id?: string | null
+          reference?: string | null
+          status?: Database["public"]["Enums"]["payment_status"]
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount_due?: number
+          amount_paid?: number
+          created_at?: string
+          due_date?: string
+          id?: string
+          method?: string | null
+          notes?: string | null
+          owner_id?: string
+          paid_date?: string | null
+          period_month?: number
+          period_year?: number
+          property_id?: string | null
+          reference?: string | null
+          status?: Database["public"]["Enums"]["payment_status"]
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rent_payments_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rent_payments_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenants: {
         Row: {
           created_at: string
@@ -316,6 +388,7 @@ export type Database = {
         | "tenant"
         | "service_provider"
       document_category: "lease" | "inspection" | "certificate" | "other"
+      payment_status: "pending" | "paid" | "late" | "partial"
       property_status: "active" | "draft" | "archived"
       property_type: "apartment" | "house" | "commercial" | "land" | "other"
       tenant_status: "active" | "notice" | "ended"
@@ -454,6 +527,7 @@ export const Constants = {
         "service_provider",
       ],
       document_category: ["lease", "inspection", "certificate", "other"],
+      payment_status: ["pending", "paid", "late", "partial"],
       property_status: ["active", "draft", "archived"],
       property_type: ["apartment", "house", "commercial", "land", "other"],
       tenant_status: ["active", "notice", "ended"],
