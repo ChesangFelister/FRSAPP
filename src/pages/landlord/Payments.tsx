@@ -11,9 +11,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card } from "@/components/ui/card";
-import { Plus, Trash2, Pencil, Wallet, Clock, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Plus, Trash2, Pencil, Wallet, Clock, AlertTriangle, CheckCircle2, FileDown, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { formatKsh } from "@/lib/currency";
+import { downloadReceiptPdf } from "@/lib/receipt";
+import { syncRentReminders } from "@/lib/rentReminders";
 
 type Status = "pending" | "paid" | "late" | "partial";
 
@@ -84,13 +86,65 @@ export default function Payments() {
       supabase.from("properties").select("id,name").eq("owner_id", user.id).order("name"),
     ]);
     if (p.error) toast.error(p.error.message);
-    setPayments((p.data as Payment[]) ?? []);
-    setTenants((t.data as Tenant[]) ?? []);
+    const rows = (p.data as Payment[]) ?? [];
+    const tlist = (t.data as Tenant[]) ?? [];
+    setPayments(rows);
+    setTenants(tlist);
     setProperties((props.data as Property[]) ?? []);
     setLoading(false);
+
+    // Auto-create local reminders for due-soon / late rent
+    const tMap = Object.fromEntries(tlist.map(x => [x.id, x.full_name]));
+    const added = syncRentReminders(
+      user.id,
+      rows.map(r => ({
+        id: r.id, status: r.status, due_date: r.due_date,
+        amount_due: r.amount_due, amount_paid: r.amount_paid,
+        period_month: r.period_month, period_year: r.period_year,
+        tenant_name: tMap[r.tenant_id] ?? "Tenant",
+      }))
+    );
+    if (added > 0) toast.message(`${added} rent reminder${added > 1 ? "s" : ""} added`);
   };
 
   useEffect(() => { load(); }, [user]);
+
+  const generateThisMonth = async () => {
+    if (!user) return;
+    const { data, error } = await supabase.rpc("ensure_current_month_dues_for_owner", { _owner_id: user.id });
+    if (error) { toast.error(error.message); return; }
+    const n = Number(data ?? 0);
+    toast.success(n > 0 ? `Created ${n} rent record${n > 1 ? "s" : ""} for this month` : "All tenants already have this month's rent recorded");
+    load();
+  };
+
+  const downloadReceipt = (p: Payment) => {
+    const tenant = tenantMap[p.tenant_id];
+    if (!tenant) { toast.error("Tenant not found"); return; }
+    if (Number(p.amount_paid) <= 0) { toast.error("No payment recorded for this period"); return; }
+    downloadReceiptPdf({
+      receiptNumber: `${p.period_year}${String(p.period_month).padStart(2, "0")}-${p.id.slice(0, 8).toUpperCase()}`,
+      issueDate: new Date().toISOString().slice(0, 10),
+      landlord: { name: user?.user_metadata?.full_name ?? null, email: user?.email ?? null },
+      tenant: {
+        name: tenant.full_name,
+        unit: (tenant as any).unit_label ?? null,
+      },
+      property: p.property_id ? { name: propMap[p.property_id] ?? null } : null,
+      payment: {
+        period_month: p.period_month,
+        period_year: p.period_year,
+        amount_due: Number(p.amount_due),
+        amount_paid: Number(p.amount_paid),
+        paid_date: p.paid_date,
+        due_date: p.due_date,
+        method: p.method,
+        reference: p.reference,
+        status: p.status,
+        notes: p.notes,
+      },
+    });
+  };
 
   const tenantMap = useMemo(() => Object.fromEntries(tenants.map(t => [t.id, t])), [tenants]);
   const propMap = useMemo(() => Object.fromEntries(properties.map(p => [p.id, p.name])), [properties]);
