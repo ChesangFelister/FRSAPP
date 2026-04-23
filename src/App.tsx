@@ -18,6 +18,7 @@ import PropertyDetail from "./pages/landlord/PropertyDetail";
 import Tenants from "./pages/landlord/Tenants";
 import Caretakers from "./pages/landlord/Caretakers";
 import Reminders from "./pages/landlord/Reminders";
+import Payments from "./pages/landlord/Payments";
 import AdminDashboard from "./pages/admin/Dashboard";
 import CaretakerDashboard from "./pages/caretaker/Dashboard";
 import ServiceProviderDashboard from "./pages/service-provider/Dashboard";
