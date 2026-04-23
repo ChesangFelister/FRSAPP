@@ -78,6 +78,10 @@ export default function PropertyForm() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
+    if (form.caretaker_id && !caretakers.some((c) => c.id === form.caretaker_id)) {
+      toast.error("Selected caretaker doesn't belong to your account");
+      return;
+    }
     setSaving(true);
     const payload = { ...form, owner_id: user.id };
     const { data, error } = isNew
