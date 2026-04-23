@@ -372,6 +372,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      ensure_current_month_dues_for_owner: {
+        Args: { _owner_id: string }
+        Returns: number
+      }
+      generate_monthly_rent_dues: {
+        Args: { _month?: number; _year?: number }
+        Returns: number
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -379,6 +387,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      refresh_overdue_rent_payments: { Args: never; Returns: number }
     }
     Enums: {
       app_role:
