@@ -258,6 +258,9 @@ export type Database = {
           property_id: string | null
           reference: string | null
           status: Database["public"]["Enums"]["payment_status"]
+          submitted_at: string | null
+          submitted_method: string | null
+          submitted_reference: string | null
           tenant_id: string
           updated_at: string
         }
@@ -276,6 +279,9 @@ export type Database = {
           property_id?: string | null
           reference?: string | null
           status?: Database["public"]["Enums"]["payment_status"]
+          submitted_at?: string | null
+          submitted_method?: string | null
+          submitted_reference?: string | null
           tenant_id: string
           updated_at?: string
         }
@@ -294,6 +300,9 @@ export type Database = {
           property_id?: string | null
           reference?: string | null
           status?: Database["public"]["Enums"]["payment_status"]
+          submitted_at?: string | null
+          submitted_method?: string | null
+          submitted_reference?: string | null
           tenant_id?: string
           updated_at?: string
         }
@@ -307,6 +316,50 @@ export type Database = {
           },
           {
             foreignKeyName: "rent_payments_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenant_invites: {
+        Row: {
+          created_at: string
+          email: string | null
+          expires_at: string
+          id: string
+          owner_id: string
+          tenant_id: string
+          token: string
+          used_at: string | null
+          used_by_user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          expires_at?: string
+          id?: string
+          owner_id: string
+          tenant_id: string
+          token: string
+          used_at?: string | null
+          used_by_user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          expires_at?: string
+          id?: string
+          owner_id?: string
+          tenant_id?: string
+          token?: string
+          used_at?: string | null
+          used_by_user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_invites_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -328,8 +381,10 @@ export type Database = {
           phone: string | null
           property_id: string | null
           status: Database["public"]["Enums"]["tenant_status"]
+          unit_id: string | null
           unit_label: string | null
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
@@ -344,8 +399,10 @@ export type Database = {
           phone?: string | null
           property_id?: string | null
           status?: Database["public"]["Enums"]["tenant_status"]
+          unit_id?: string | null
           unit_label?: string | null
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
@@ -360,12 +417,65 @@ export type Database = {
           phone?: string | null
           property_id?: string | null
           status?: Database["public"]["Enums"]["tenant_status"]
+          unit_id?: string | null
           unit_label?: string | null
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: [
           {
             foreignKeyName: "tenants_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenants_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      units: {
+        Row: {
+          created_at: string
+          id: string
+          label: string
+          monthly_rent_ksh: number
+          notes: string | null
+          owner_id: string
+          property_id: string
+          status: Database["public"]["Enums"]["unit_status"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          label: string
+          monthly_rent_ksh?: number
+          notes?: string | null
+          owner_id: string
+          property_id: string
+          status?: Database["public"]["Enums"]["unit_status"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          label?: string
+          monthly_rent_ksh?: number
+          notes?: string | null
+          owner_id?: string
+          property_id?: string
+          status?: Database["public"]["Enums"]["unit_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "units_property_id_fkey"
             columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "properties"
@@ -414,7 +524,21 @@ export type Database = {
         }
         Returns: boolean
       }
+      redeem_tenant_invite: { Args: { _token: string }; Returns: string }
       refresh_overdue_rent_payments: { Args: never; Returns: number }
+      submit_rent_payment_intent: {
+        Args: {
+          _method: string
+          _note: string
+          _payment_id: string
+          _reference: string
+        }
+        Returns: undefined
+      }
+      tenant_outstanding_balance: {
+        Args: { _tenant_id: string }
+        Returns: number
+      }
     }
     Enums: {
       app_role:
@@ -428,6 +552,7 @@ export type Database = {
       property_status: "active" | "draft" | "archived"
       property_type: "apartment" | "house" | "commercial" | "land" | "other"
       tenant_status: "active" | "notice" | "ended"
+      unit_status: "vacant" | "occupied"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -567,6 +692,7 @@ export const Constants = {
       property_status: ["active", "draft", "archived"],
       property_type: ["apartment", "house", "commercial", "land", "other"],
       tenant_status: ["active", "notice", "ended"],
+      unit_status: ["vacant", "occupied"],
     },
   },
 } as const
