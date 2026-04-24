@@ -45,7 +45,7 @@ export async function fetchLogoAsDataUrl(url: string): Promise<string | null> {
   }
 }
 
-export function downloadReceiptPdf(data: ReceiptData) {
+export function buildReceiptPdf(data: ReceiptData) {
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   const pageW = doc.internal.pageSize.getWidth();
   const margin = 48;
@@ -173,5 +173,15 @@ export function downloadReceiptPdf(data: ReceiptData) {
     { align: "center" }
   );
 
+  return doc;
+}
+
+export function downloadReceiptPdf(data: ReceiptData) {
+  const doc = buildReceiptPdf(data);
   doc.save(`receipt-${data.receiptNumber}.pdf`);
+}
+
+export function receiptPdfDataUrl(data: ReceiptData): string {
+  const doc = buildReceiptPdf(data);
+  return doc.output("datauristring");
 }
