@@ -23,6 +23,7 @@ import Settings from "./pages/landlord/Settings";
 import AdminDashboard from "./pages/admin/Dashboard";
 import CaretakerDashboard from "./pages/caretaker/Dashboard";
 import ServiceProviderDashboard from "./pages/service-provider/Dashboard";
+import TenantDashboard from "./pages/tenant/Dashboard";
 
 const queryClient = new QueryClient();
 
@@ -69,6 +70,15 @@ const App = () => (
               element={
                 <ProtectedRoute allowedRoles={["service_provider"]}>
                   <ServiceProviderDashboard />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/tenant/dashboard"
+              element={
+                <ProtectedRoute allowedRoles={["tenant"]}>
+                  <TenantDashboard />
                 </ProtectedRoute>
               }
             />

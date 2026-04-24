@@ -376,6 +376,21 @@ export default function Tenants() {
           )}
         </DialogContent>
       </Dialog>
+
+      <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-serif text-xl">Tenant portal invite</DialogTitle>
+            <DialogDescription>
+              Share this single-use link with {inviteFor?.full_name}. They'll create a password and be linked to their tenant record automatically. Expires in 14 days.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="bg-secondary/50 border border-border p-3 text-xs break-all font-mono">{inviteUrl}</div>
+            <Button onClick={copyInvite} className="w-full"><Copy className="h-4 w-4" /> Copy link</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </LandlordLayout>
   );
 }
