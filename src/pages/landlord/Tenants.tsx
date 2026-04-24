@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Plus, Users, Pencil, Trash2, ArrowLeft, CheckCircle2 } from "lucide-react";
+import { Plus, Users, Pencil, Trash2, ArrowLeft, CheckCircle2, FileSignature } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import LandlordLayout from "@/components/landlord/LandlordLayout";
@@ -80,6 +80,23 @@ export default function Tenants() {
       property_id: t.property_id ?? "", unit_label: t.unit_label ?? "",
       monthly_rent_ksh: Number(t.monthly_rent_ksh), lease_start: t.lease_start ?? "",
       lease_end: t.lease_end ?? "", status: t.status,
+    });
+    setStep("form");
+    setOpen(true);
+  };
+
+  const openRenew = (t: Tenant) => {
+    setEditing(t);
+    const today = new Date().toISOString().slice(0, 10);
+    const oneYear = new Date();
+    oneYear.setFullYear(oneYear.getFullYear() + 1);
+    setForm({
+      full_name: t.full_name, email: t.email ?? "", phone: t.phone ?? "",
+      property_id: t.property_id ?? "", unit_label: t.unit_label ?? "",
+      monthly_rent_ksh: Number(t.monthly_rent_ksh),
+      lease_start: today,
+      lease_end: oneYear.toISOString().slice(0, 10),
+      status: "active",
     });
     setStep("form");
     setOpen(true);
@@ -182,6 +199,7 @@ export default function Tenants() {
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex justify-end gap-1">
+                      <Button size="sm" variant="ghost" onClick={() => openRenew(t)} title="Start new lease for this tenant"><FileSignature className="h-3.5 w-3.5" /></Button>
                       <Button size="sm" variant="ghost" onClick={() => openEdit(t)}><Pencil className="h-3.5 w-3.5" /></Button>
                       <Button size="sm" variant="ghost" onClick={() => handleDelete(t.id)} className="text-destructive hover:text-destructive hover:bg-destructive/10"><Trash2 className="h-3.5 w-3.5" /></Button>
                     </div>
