@@ -14,7 +14,7 @@ import { Card } from "@/components/ui/card";
 import { Plus, Trash2, Pencil, Wallet, Clock, AlertTriangle, CheckCircle2, FileDown, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { formatKsh } from "@/lib/currency";
-import { downloadReceiptPdf } from "@/lib/receipt";
+import { downloadReceiptPdf, fetchLogoAsDataUrl } from "@/lib/receipt";
 import { syncRentReminders } from "@/lib/rentReminders";
 
 type Status = "pending" | "paid" | "late" | "partial";
@@ -118,10 +118,20 @@ export default function Payments() {
     load();
   };
 
-  const downloadReceipt = (p: Payment) => {
+  const downloadReceipt = async (p: Payment) => {
     const tenant = tenantMap[p.tenant_id];
     if (!tenant) { toast.error("Tenant not found"); return; }
     if (Number(p.amount_paid) <= 0) { toast.error("No payment recorded for this period"); return; }
+
+    const { data: settings } = await supabase
+      .from("receipt_settings")
+      .select("business_name, address, logo_url")
+      .eq("owner_id", user!.id)
+      .maybeSingle();
+
+    let logoDataUrl: string | null = null;
+    if (settings?.logo_url) logoDataUrl = await fetchLogoAsDataUrl(settings.logo_url);
+
     downloadReceiptPdf({
       receiptNumber: `${p.period_year}${String(p.period_month).padStart(2, "0")}-${p.id.slice(0, 8).toUpperCase()}`,
       issueDate: new Date().toISOString().slice(0, 10),
@@ -143,6 +153,11 @@ export default function Payments() {
         status: p.status,
         notes: p.notes,
       },
+      branding: settings ? {
+        businessName: settings.business_name,
+        address: settings.address,
+        logoDataUrl,
+      } : null,
     });
   };
 
