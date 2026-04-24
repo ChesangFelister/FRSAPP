@@ -86,7 +86,7 @@ export default function Tenants() {
     setEditing(t);
     setForm({
       full_name: t.full_name, email: t.email ?? "", phone: t.phone ?? "",
-      property_id: t.property_id ?? "", unit_label: t.unit_label ?? "",
+      property_id: t.property_id ?? "", unit_id: t.unit_id ?? "", unit_label: t.unit_label ?? "",
       monthly_rent_ksh: Number(t.monthly_rent_ksh), lease_start: t.lease_start ?? "",
       lease_end: t.lease_end ?? "", status: t.status,
     });
@@ -101,7 +101,7 @@ export default function Tenants() {
     oneYear.setFullYear(oneYear.getFullYear() + 1);
     setForm({
       full_name: t.full_name, email: t.email ?? "", phone: t.phone ?? "",
-      property_id: t.property_id ?? "", unit_label: t.unit_label ?? "",
+      property_id: t.property_id ?? "", unit_id: t.unit_id ?? "", unit_label: t.unit_label ?? "",
       monthly_rent_ksh: Number(t.monthly_rent_ksh),
       lease_start: today,
       lease_end: oneYear.toISOString().slice(0, 10),
@@ -121,13 +121,16 @@ export default function Tenants() {
   const handleConfirm = async () => {
     if (!user) return;
     setSaving(true);
+    // Auto-fill unit_label from selected unit (so legacy display still works)
+    const selectedUnit = units.find(u => u.id === form.unit_id);
     const payload = {
       owner_id: user.id,
       full_name: form.full_name,
       email: form.email || null,
       phone: form.phone || null,
       property_id: form.property_id || null,
-      unit_label: form.unit_label || null,
+      unit_id: form.unit_id || null,
+      unit_label: selectedUnit?.label || form.unit_label || null,
       monthly_rent_ksh: form.monthly_rent_ksh,
       lease_start: form.lease_start || null,
       lease_end: form.lease_end || null,
