@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Plus, Users, Pencil, Trash2, ArrowLeft, CheckCircle2, FileSignature } from "lucide-react";
+import { Plus, Users, Pencil, Trash2, ArrowLeft, CheckCircle2, FileSignature, Send, Copy } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import LandlordLayout from "@/components/landlord/LandlordLayout";
@@ -22,17 +22,20 @@ interface Tenant {
   email: string | null;
   phone: string | null;
   property_id: string | null;
+  unit_id: string | null;
   unit_label: string | null;
   monthly_rent_ksh: number;
   lease_start: string | null;
   lease_end: string | null;
   status: Status;
+  user_id: string | null;
 }
 
 interface Property { id: string; name: string }
+interface Unit { id: string; label: string; property_id: string; monthly_rent_ksh: number; status: "vacant" | "occupied" }
 
 const blankForm = {
-  full_name: "", email: "", phone: "", property_id: "",
+  full_name: "", email: "", phone: "", property_id: "", unit_id: "",
   unit_label: "", monthly_rent_ksh: 0, lease_start: "", lease_end: "", status: "active" as Status,
 };
 
@@ -46,21 +49,27 @@ export default function Tenants() {
   const { user } = useAuth();
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [properties, setProperties] = useState<Property[]>([]);
+  const [units, setUnits] = useState<Unit[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Tenant | null>(null);
   const [form, setForm] = useState(blankForm);
   const [saving, setSaving] = useState(false);
   const [step, setStep] = useState<"form" | "confirm">("form");
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [inviteUrl, setInviteUrl] = useState("");
+  const [inviteFor, setInviteFor] = useState<Tenant | null>(null);
 
   const load = async () => {
     if (!user) return;
-    const [{ data: t }, { data: p }] = await Promise.all([
+    const [{ data: t }, { data: p }, { data: u }] = await Promise.all([
       supabase.from("tenants").select("*").eq("owner_id", user.id).order("created_at", { ascending: false }),
       supabase.from("properties").select("id, name").eq("owner_id", user.id).order("name"),
+      supabase.from("units").select("*").eq("owner_id", user.id),
     ]);
     setTenants((t as Tenant[]) ?? []);
     setProperties(p ?? []);
+    setUnits((u as Unit[]) ?? []);
     setLoading(false);
   };
 
