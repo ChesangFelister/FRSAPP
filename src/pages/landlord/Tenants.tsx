@@ -290,8 +290,25 @@ export default function Tenants() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="t-unit">Unit label</Label>
-                  <Input id="t-unit" value={form.unit_label} onChange={(e) => setForm(f => ({ ...f, unit_label: e.target.value }))} placeholder="e.g. A4" />
+                  <Label htmlFor="t-unit">Unit</Label>
+                  <Select value={form.unit_id || "none"} onValueChange={(v) => {
+                    if (v === "none") { setForm(f => ({ ...f, unit_id: "" })); return; }
+                    const u = units.find(x => x.id === v);
+                    setForm(f => ({
+                      ...f,
+                      unit_id: v,
+                      unit_label: u?.label ?? f.unit_label,
+                      monthly_rent_ksh: u?.monthly_rent_ksh ? Number(u.monthly_rent_ksh) : f.monthly_rent_ksh,
+                    }));
+                  }}>
+                    <SelectTrigger id="t-unit"><SelectValue placeholder="Select unit…" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">— None —</SelectItem>
+                      {units.filter(u => u.property_id === form.property_id).map(u => (
+                        <SelectItem key={u.id} value={u.id}>Unit {u.label} ({u.status})</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
