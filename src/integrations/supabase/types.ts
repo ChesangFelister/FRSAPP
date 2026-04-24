@@ -215,6 +215,33 @@ export type Database = {
           },
         ]
       }
+      receipt_settings: {
+        Row: {
+          address: string | null
+          business_name: string | null
+          created_at: string
+          logo_url: string | null
+          owner_id: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          business_name?: string | null
+          created_at?: string
+          logo_url?: string | null
+          owner_id: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          business_name?: string | null
+          created_at?: string
+          logo_url?: string | null
+          owner_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       rent_payments: {
         Row: {
           amount_due: number
