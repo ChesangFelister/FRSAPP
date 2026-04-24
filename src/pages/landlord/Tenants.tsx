@@ -162,6 +162,31 @@ export default function Tenants() {
     load();
   };
 
+  const generateInvite = async (t: Tenant) => {
+    if (!user) return;
+    if (t.user_id) {
+      toast.info(`${t.full_name} is already linked to a portal account.`);
+      return;
+    }
+    const token = crypto.randomUUID().replace(/-/g, "");
+    const { error } = await supabase.from("tenant_invites").insert({
+      owner_id: user.id,
+      tenant_id: t.id,
+      token,
+      email: t.email,
+    });
+    if (error) { toast.error(error.message); return; }
+    const url = `${window.location.origin}/auth?mode=register&invite=${token}`;
+    setInviteUrl(url);
+    setInviteFor(t);
+    setInviteOpen(true);
+  };
+
+  const copyInvite = () => {
+    navigator.clipboard.writeText(inviteUrl);
+    toast.success("Invite link copied");
+  };
+
   const propMap = Object.fromEntries(properties.map(p => [p.id, p.name]));
 
   return (
@@ -200,7 +225,10 @@ export default function Tenants() {
               {tenants.map((t) => (
                 <tr key={t.id} className="hover:bg-secondary/30 transition-colors">
                   <td className="px-6 py-4">
-                    <div className="font-medium">{t.full_name}</div>
+                    <div className="font-medium flex items-center gap-1.5">
+                      {t.full_name}
+                      {t.user_id && <span className="text-[10px] uppercase tracking-wider bg-accent-soft text-accent-foreground border border-accent/40 px-1.5 py-0.5">Portal</span>}
+                    </div>
                     <div className="text-xs text-muted-foreground">{t.email ?? t.phone ?? "—"}</div>
                   </td>
                   <td className="px-4 py-4 hidden md:table-cell text-muted-foreground">{propMap[t.property_id ?? ""] ?? "—"}</td>
@@ -211,6 +239,7 @@ export default function Tenants() {
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex justify-end gap-1">
+                      <Button size="sm" variant="ghost" onClick={() => generateInvite(t)} title="Send portal invite" disabled={!!t.user_id}><Send className="h-3.5 w-3.5" /></Button>
                       <Button size="sm" variant="ghost" onClick={() => openRenew(t)} title="Start new lease for this tenant"><FileSignature className="h-3.5 w-3.5" /></Button>
                       <Button size="sm" variant="ghost" onClick={() => openEdit(t)}><Pencil className="h-3.5 w-3.5" /></Button>
                       <Button size="sm" variant="ghost" onClick={() => handleDelete(t.id)} className="text-destructive hover:text-destructive hover:bg-destructive/10"><Trash2 className="h-3.5 w-3.5" /></Button>
