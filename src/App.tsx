@@ -19,6 +19,7 @@ import Tenants from "./pages/landlord/Tenants";
 import Caretakers from "./pages/landlord/Caretakers";
 import Reminders from "./pages/landlord/Reminders";
 import Payments from "./pages/landlord/Payments";
+import Settings from "./pages/landlord/Settings";
 import AdminDashboard from "./pages/admin/Dashboard";
 import CaretakerDashboard from "./pages/caretaker/Dashboard";
 import ServiceProviderDashboard from "./pages/service-provider/Dashboard";
@@ -54,6 +55,7 @@ const App = () => (
             <Route path="/landlord/caretakers" element={<ProtectedRoute allowedRoles={["landlord"]}><Caretakers /></ProtectedRoute>} />
             <Route path="/landlord/reminders" element={<ProtectedRoute allowedRoles={["landlord"]}><Reminders /></ProtectedRoute>} />
             <Route path="/landlord/payments" element={<ProtectedRoute allowedRoles={["landlord"]}><Payments /></ProtectedRoute>} />
+            <Route path="/landlord/settings" element={<ProtectedRoute allowedRoles={["landlord"]}><Settings /></ProtectedRoute>} />
             <Route
               path="/caretaker"
               element={
