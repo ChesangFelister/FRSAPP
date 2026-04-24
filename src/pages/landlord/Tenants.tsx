@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Plus, Users, Pencil, Trash2, ArrowLeft, CheckCircle2, FileSignature } from "lucide-react";
+import { Plus, Users, Pencil, Trash2, ArrowLeft, CheckCircle2, FileSignature, Send, Copy } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import LandlordLayout from "@/components/landlord/LandlordLayout";
@@ -22,17 +22,20 @@ interface Tenant {
   email: string | null;
   phone: string | null;
   property_id: string | null;
+  unit_id: string | null;
   unit_label: string | null;
   monthly_rent_ksh: number;
   lease_start: string | null;
   lease_end: string | null;
   status: Status;
+  user_id: string | null;
 }
 
 interface Property { id: string; name: string }
+interface Unit { id: string; label: string; property_id: string; monthly_rent_ksh: number; status: "vacant" | "occupied" }
 
 const blankForm = {
-  full_name: "", email: "", phone: "", property_id: "",
+  full_name: "", email: "", phone: "", property_id: "", unit_id: "",
   unit_label: "", monthly_rent_ksh: 0, lease_start: "", lease_end: "", status: "active" as Status,
 };
 
@@ -46,21 +49,27 @@ export default function Tenants() {
   const { user } = useAuth();
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [properties, setProperties] = useState<Property[]>([]);
+  const [units, setUnits] = useState<Unit[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Tenant | null>(null);
   const [form, setForm] = useState(blankForm);
   const [saving, setSaving] = useState(false);
   const [step, setStep] = useState<"form" | "confirm">("form");
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [inviteUrl, setInviteUrl] = useState("");
+  const [inviteFor, setInviteFor] = useState<Tenant | null>(null);
 
   const load = async () => {
     if (!user) return;
-    const [{ data: t }, { data: p }] = await Promise.all([
+    const [{ data: t }, { data: p }, { data: u }] = await Promise.all([
       supabase.from("tenants").select("*").eq("owner_id", user.id).order("created_at", { ascending: false }),
       supabase.from("properties").select("id, name").eq("owner_id", user.id).order("name"),
+      supabase.from("units").select("*").eq("owner_id", user.id),
     ]);
     setTenants((t as Tenant[]) ?? []);
     setProperties(p ?? []);
+    setUnits((u as Unit[]) ?? []);
     setLoading(false);
   };
 
@@ -77,7 +86,7 @@ export default function Tenants() {
     setEditing(t);
     setForm({
       full_name: t.full_name, email: t.email ?? "", phone: t.phone ?? "",
-      property_id: t.property_id ?? "", unit_label: t.unit_label ?? "",
+      property_id: t.property_id ?? "", unit_id: t.unit_id ?? "", unit_label: t.unit_label ?? "",
       monthly_rent_ksh: Number(t.monthly_rent_ksh), lease_start: t.lease_start ?? "",
       lease_end: t.lease_end ?? "", status: t.status,
     });
@@ -92,7 +101,7 @@ export default function Tenants() {
     oneYear.setFullYear(oneYear.getFullYear() + 1);
     setForm({
       full_name: t.full_name, email: t.email ?? "", phone: t.phone ?? "",
-      property_id: t.property_id ?? "", unit_label: t.unit_label ?? "",
+      property_id: t.property_id ?? "", unit_id: t.unit_id ?? "", unit_label: t.unit_label ?? "",
       monthly_rent_ksh: Number(t.monthly_rent_ksh),
       lease_start: today,
       lease_end: oneYear.toISOString().slice(0, 10),
@@ -112,13 +121,16 @@ export default function Tenants() {
   const handleConfirm = async () => {
     if (!user) return;
     setSaving(true);
+    // Auto-fill unit_label from selected unit (so legacy display still works)
+    const selectedUnit = units.find(u => u.id === form.unit_id);
     const payload = {
       owner_id: user.id,
       full_name: form.full_name,
       email: form.email || null,
       phone: form.phone || null,
       property_id: form.property_id || null,
-      unit_label: form.unit_label || null,
+      unit_id: form.unit_id || null,
+      unit_label: selectedUnit?.label || form.unit_label || null,
       monthly_rent_ksh: form.monthly_rent_ksh,
       lease_start: form.lease_start || null,
       lease_end: form.lease_end || null,
@@ -148,6 +160,31 @@ export default function Tenants() {
     if (error) { toast.error(error.message); return; }
     toast.success("Tenant deleted");
     load();
+  };
+
+  const generateInvite = async (t: Tenant) => {
+    if (!user) return;
+    if (t.user_id) {
+      toast.info(`${t.full_name} is already linked to a portal account.`);
+      return;
+    }
+    const token = crypto.randomUUID().replace(/-/g, "");
+    const { error } = await supabase.from("tenant_invites").insert({
+      owner_id: user.id,
+      tenant_id: t.id,
+      token,
+      email: t.email,
+    });
+    if (error) { toast.error(error.message); return; }
+    const url = `${window.location.origin}/auth?mode=register&invite=${token}`;
+    setInviteUrl(url);
+    setInviteFor(t);
+    setInviteOpen(true);
+  };
+
+  const copyInvite = () => {
+    navigator.clipboard.writeText(inviteUrl);
+    toast.success("Invite link copied");
   };
 
   const propMap = Object.fromEntries(properties.map(p => [p.id, p.name]));
@@ -188,7 +225,10 @@ export default function Tenants() {
               {tenants.map((t) => (
                 <tr key={t.id} className="hover:bg-secondary/30 transition-colors">
                   <td className="px-6 py-4">
-                    <div className="font-medium">{t.full_name}</div>
+                    <div className="font-medium flex items-center gap-1.5">
+                      {t.full_name}
+                      {t.user_id && <span className="text-[10px] uppercase tracking-wider bg-accent-soft text-accent-foreground border border-accent/40 px-1.5 py-0.5">Portal</span>}
+                    </div>
                     <div className="text-xs text-muted-foreground">{t.email ?? t.phone ?? "—"}</div>
                   </td>
                   <td className="px-4 py-4 hidden md:table-cell text-muted-foreground">{propMap[t.property_id ?? ""] ?? "—"}</td>
@@ -199,6 +239,7 @@ export default function Tenants() {
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex justify-end gap-1">
+                      <Button size="sm" variant="ghost" onClick={() => generateInvite(t)} title="Send portal invite" disabled={!!t.user_id}><Send className="h-3.5 w-3.5" /></Button>
                       <Button size="sm" variant="ghost" onClick={() => openRenew(t)} title="Start new lease for this tenant"><FileSignature className="h-3.5 w-3.5" /></Button>
                       <Button size="sm" variant="ghost" onClick={() => openEdit(t)}><Pencil className="h-3.5 w-3.5" /></Button>
                       <Button size="sm" variant="ghost" onClick={() => handleDelete(t.id)} className="text-destructive hover:text-destructive hover:bg-destructive/10"><Trash2 className="h-3.5 w-3.5" /></Button>
@@ -249,8 +290,25 @@ export default function Tenants() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="t-unit">Unit label</Label>
-                  <Input id="t-unit" value={form.unit_label} onChange={(e) => setForm(f => ({ ...f, unit_label: e.target.value }))} placeholder="e.g. A4" />
+                  <Label htmlFor="t-unit">Unit</Label>
+                  <Select value={form.unit_id || "none"} onValueChange={(v) => {
+                    if (v === "none") { setForm(f => ({ ...f, unit_id: "" })); return; }
+                    const u = units.find(x => x.id === v);
+                    setForm(f => ({
+                      ...f,
+                      unit_id: v,
+                      unit_label: u?.label ?? f.unit_label,
+                      monthly_rent_ksh: u?.monthly_rent_ksh ? Number(u.monthly_rent_ksh) : f.monthly_rent_ksh,
+                    }));
+                  }}>
+                    <SelectTrigger id="t-unit"><SelectValue placeholder="Select unit…" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">— None —</SelectItem>
+                      {units.filter(u => u.property_id === form.property_id).map(u => (
+                        <SelectItem key={u.id} value={u.id}>Unit {u.label} ({u.status})</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -316,6 +374,21 @@ export default function Tenants() {
               </DialogFooter>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-serif text-xl">Tenant portal invite</DialogTitle>
+            <DialogDescription>
+              Share this single-use link with {inviteFor?.full_name}. They'll create a password and be linked to their tenant record automatically. Expires in 14 days.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="bg-secondary/50 border border-border p-3 text-xs break-all font-mono">{inviteUrl}</div>
+            <Button onClick={copyInvite} className="w-full"><Copy className="h-4 w-4" /> Copy link</Button>
+          </div>
         </DialogContent>
       </Dialog>
     </LandlordLayout>

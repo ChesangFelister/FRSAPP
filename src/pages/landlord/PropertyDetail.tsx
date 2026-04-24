@@ -7,6 +7,7 @@ import LandlordLayout from "@/components/landlord/LandlordLayout";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import PropertyDocuments from "@/components/landlord/PropertyDocuments";
+import PropertyUnits from "@/components/landlord/PropertyUnits";
 import { formatKsh } from "@/lib/currency";
 
 export default function PropertyDetail() {
@@ -14,6 +15,7 @@ export default function PropertyDetail() {
   const { user } = useAuth();
   const [property, setProperty] = useState<any>(null);
   const [tenants, setTenants] = useState<any[]>([]);
+  const [units, setUnits] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [caretaker, setCaretaker] = useState<any>(null);
@@ -21,12 +23,14 @@ export default function PropertyDetail() {
   useEffect(() => {
     if (!id || !user) return;
     const load = async () => {
-      const [{ data: p }, { data: t }] = await Promise.all([
+      const [{ data: p }, { data: t }, { data: u }] = await Promise.all([
         supabase.from("properties").select("*").eq("id", id).maybeSingle(),
         supabase.from("tenants").select("*").eq("property_id", id).order("created_at", { ascending: false }),
+        supabase.from("units").select("*").eq("property_id", id).order("label"),
       ]);
       setProperty(p);
       setTenants(t ?? []);
+      setUnits(u ?? []);
       if (p && (p as any).caretaker_id) {
         const { data: c } = await supabase.from("caretakers").select("*").eq("id", (p as any).caretaker_id).maybeSingle();
         setCaretaker(c);
@@ -41,7 +45,10 @@ export default function PropertyDetail() {
 
   const activeTenants = tenants.filter(t => t.status === "active");
   const collected = activeTenants.reduce((s, t) => s + Number(t.monthly_rent_ksh ?? 0), 0);
-  const occupancy = property.units_count > 0 ? Math.min(100, Math.round((activeTenants.length / property.units_count) * 100)) : 0;
+  // Prefer real units if any exist; else fall back to legacy units_count
+  const totalUnits = units.length > 0 ? units.length : property.units_count;
+  const occupiedUnits = units.length > 0 ? units.filter(u => u.status === "occupied").length : activeTenants.length;
+  const occupancy = totalUnits > 0 ? Math.min(100, Math.round((occupiedUnits / totalUnits) * 100)) : 0;
 
   return (
     <LandlordLayout
@@ -106,7 +113,7 @@ export default function PropertyDetail() {
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {[
-          { label: "Total units", value: property.units_count, icon: Building2 },
+          { label: "Total units", value: totalUnits, icon: Building2 },
           { label: "Active tenants", value: activeTenants.length, icon: Users },
           { label: "Monthly collected", value: formatKsh(collected), icon: Coins },
           { label: "Occupancy", value: `${occupancy}%`, icon: TrendingUp },
@@ -123,6 +130,7 @@ export default function PropertyDetail() {
       <Tabs defaultValue="tenants" className="w-full">
         <TabsList className="bg-card border border-border rounded-none h-auto p-0">
           <TabsTrigger value="tenants" className="rounded-none data-[state=active]:bg-background data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-accent px-6 py-3">Tenants</TabsTrigger>
+          <TabsTrigger value="units" className="rounded-none data-[state=active]:bg-background data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-accent px-6 py-3">Units</TabsTrigger>
           <TabsTrigger value="documents" className="rounded-none data-[state=active]:bg-background data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-accent px-6 py-3">Documents</TabsTrigger>
         </TabsList>
 
@@ -153,6 +161,12 @@ export default function PropertyDetail() {
                 ))}
               </ul>
             )}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="units" className="mt-6">
+          <div className="bg-card border border-border p-6">
+            <PropertyUnits propertyId={property.id} defaultRent={Number(property.monthly_rent_ksh ?? 0)} />
           </div>
         </TabsContent>
 

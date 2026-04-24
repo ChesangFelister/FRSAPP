@@ -18,10 +18,25 @@ export default function Auth() {
   const initialTab = params.get("mode") === "register" ? "register" : "login";
   const [tab, setTab] = useState(initialTab);
 
-  // ✅ ROLE-BASED REDIRECT
+  // ✅ ROLE-BASED REDIRECT (tenant takes priority if user is invited)
   useEffect(() => {
     if (!user) return;
     if (!roles || roles.length === 0) return;
+
+    // Handle invite token in URL: redeem before redirecting
+    const inviteToken = params.get("invite");
+    if (inviteToken) {
+      (async () => {
+        const { error } = await supabase.rpc("redeem_tenant_invite", { _token: inviteToken });
+        if (error) {
+          toast.error(`Invite: ${error.message}`);
+        } else {
+          toast.success("Invite accepted — welcome!");
+        }
+        navigate("/tenant/dashboard", { replace: true });
+      })();
+      return;
+    }
 
     const roleRoutes: Record<AppRole, string> = {
       admin: "/admin",
@@ -31,11 +46,13 @@ export default function Auth() {
       service_provider: "/service-provider",
     };
 
-    const userRole = roles.find((role) => roleRoutes[role]);
+    // Priority: tenant > admin > landlord > caretaker > service_provider
+    const priority: AppRole[] = ["tenant", "admin", "landlord", "caretaker", "service_provider"];
+    const userRole = priority.find((r) => roles.includes(r));
     if (userRole) {
       navigate(roleRoutes[userRole], { replace: true });
     }
-  }, [user, roles, navigate]);
+  }, [user, roles, navigate, params]);
 
   // Login state
   const [loginEmail, setLoginEmail] = useState("");
