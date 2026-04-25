@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { formatKsh } from "@/lib/currency";
+import TenantLeaseDocuments from "@/components/tenant/TenantLeaseDocuments";
 
 interface TenantRow {
   id: string;
@@ -170,6 +171,9 @@ export default function TenantProfile() {
             </div>
           </dl>
         </section>
+
+        {/* Lease documents */}
+        <TenantLeaseDocuments tenantId={tenant.id} />
 
         {/* Editable phone */}
         <section className="bg-card border border-border">
