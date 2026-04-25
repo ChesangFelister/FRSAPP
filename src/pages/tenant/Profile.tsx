@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { formatKsh } from "@/lib/currency";
+import TenantLeaseDocuments from "@/components/tenant/TenantLeaseDocuments";
 
 interface TenantRow {
   id: string;
