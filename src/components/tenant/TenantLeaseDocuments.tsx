@@ -258,7 +258,9 @@ export default function TenantLeaseDocuments({ tenantId }: { tenantId: string })
         <div className="p-10 text-center text-sm text-muted-foreground">
           {decorated.length === 0
             ? "No documents yet. Upload your signed lease, ID copy, payment receipts, or any other supporting documents."
-            : `No ${filter === "all" ? "" : CATEGORY_LABEL[filter as Category].toLowerCase() + " "}documents.`}
+            : q
+              ? `No documents match "${query}".`
+              : `No ${filter === "all" ? "" : CATEGORY_LABEL[filter as Category].toLowerCase() + " "}documents.`}
         </div>
       ) : (
         <ul className="divide-y divide-border">
