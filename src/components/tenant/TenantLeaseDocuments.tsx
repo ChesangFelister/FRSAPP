@@ -197,6 +197,29 @@ export default function TenantLeaseDocuments({ tenantId }: { tenantId: string })
         </div>
       </div>
 
+      {/* Search */}
+      <div className="px-6 py-3 border-b border-border">
+        <div className="relative max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search by filename or category…"
+            className="h-9 pl-9 pr-9 text-sm"
+          />
+          {query && (
+            <button
+              type="button"
+              onClick={() => setQuery("")}
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground"
+              aria-label="Clear search"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* Filter chips + sort */}
       <div className="px-6 py-3 border-b border-border flex flex-wrap items-center gap-2">
         {(["all", ...CATEGORIES.map((c) => c.value)] as (Category | "all")[]).map((key) => {
