@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { Upload, FileText, Download, Trash2, Loader2, Eye, ArrowUpDown } from "lucide-react";
+import { Upload, FileText, Download, Trash2, Loader2, Eye, ArrowUpDown, Search, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
@@ -62,6 +63,7 @@ export default function TenantLeaseDocuments({ tenantId }: { tenantId: string })
   const [uploadCategory, setUploadCategory] = useState<Category>("lease");
   const [filter, setFilter] = useState<Category | "all">("all");
   const [sort, setSort] = useState<SortOrder>("newest");
+  const [query, setQuery] = useState("");
   const [preview, setPreview] = useState<{ name: string; display: string; url: string; mime: string } | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
 
@@ -135,15 +137,23 @@ export default function TenantLeaseDocuments({ tenantId }: { tenantId: string })
   }, [decorated]);
 
   const filtered = filter === "all" ? decorated : decorated.filter((d) => d.category === filter);
+  const q = query.trim().toLowerCase();
+  const searched = q
+    ? filtered.filter(
+        (d) =>
+          d.display.toLowerCase().includes(q) ||
+          CATEGORY_LABEL[d.category].toLowerCase().includes(q),
+      )
+    : filtered;
   const visible = useMemo(() => {
-    const arr = [...filtered];
+    const arr = [...searched];
     arr.sort((a, b) => {
       const ta = a.created_at ? new Date(a.created_at).getTime() : 0;
       const tb = b.created_at ? new Date(b.created_at).getTime() : 0;
       return sort === "newest" ? tb - ta : ta - tb;
     });
     return arr;
-  }, [filtered, sort]);
+  }, [searched, sort]);
 
   const isPreviewable = (mime: string, name: string) => {
     const lower = name.toLowerCase();
@@ -187,6 +197,29 @@ export default function TenantLeaseDocuments({ tenantId }: { tenantId: string })
         </div>
       </div>
 
+      {/* Search */}
+      <div className="px-6 py-3 border-b border-border">
+        <div className="relative max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search by filename or category…"
+            className="h-9 pl-9 pr-9 text-sm"
+          />
+          {query && (
+            <button
+              type="button"
+              onClick={() => setQuery("")}
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground"
+              aria-label="Clear search"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* Filter chips + sort */}
       <div className="px-6 py-3 border-b border-border flex flex-wrap items-center gap-2">
         {(["all", ...CATEGORIES.map((c) => c.value)] as (Category | "all")[]).map((key) => {
@@ -225,7 +258,9 @@ export default function TenantLeaseDocuments({ tenantId }: { tenantId: string })
         <div className="p-10 text-center text-sm text-muted-foreground">
           {decorated.length === 0
             ? "No documents yet. Upload your signed lease, ID copy, payment receipts, or any other supporting documents."
-            : `No ${filter === "all" ? "" : CATEGORY_LABEL[filter as Category].toLowerCase() + " "}documents.`}
+            : q
+              ? `No documents match "${query}".`
+              : `No ${filter === "all" ? "" : CATEGORY_LABEL[filter as Category].toLowerCase() + " "}documents.`}
         </div>
       ) : (
         <ul className="divide-y divide-border">
