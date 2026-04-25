@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
-import { Upload, FileText, Download, Trash2, Loader2 } from "lucide-react";
+import { Upload, FileText, Download, Trash2, Loader2, Eye, ArrowUpDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+
+type SortOrder = "newest" | "oldest";
 
 type Category = "lease" | "id" | "receipt" | "other";
 
@@ -58,6 +61,19 @@ export default function TenantLeaseDocuments({ tenantId }: { tenantId: string })
   const [uploading, setUploading] = useState(false);
   const [uploadCategory, setUploadCategory] = useState<Category>("lease");
   const [filter, setFilter] = useState<Category | "all">("all");
+  const [sort, setSort] = useState<SortOrder>("newest");
+  const [preview, setPreview] = useState<{ name: string; display: string; url: string; mime: string } | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+
+  const handlePreview = async (fileName: string, display: string, mime?: string) => {
+    setPreviewLoading(true);
+    const { data, error } = await supabase.storage
+      .from("property-documents")
+      .createSignedUrl(`${folder}/${fileName}`, 300);
+    setPreviewLoading(false);
+    if (error || !data?.signedUrl) { toast.error(error?.message ?? "Could not load preview"); return; }
+    setPreview({ name: fileName, display, url: data.signedUrl, mime: mime ?? "" });
+  };
 
   const load = async () => {
     setLoading(true);
@@ -118,7 +134,26 @@ export default function TenantLeaseDocuments({ tenantId }: { tenantId: string })
     return base;
   }, [decorated]);
 
-  const visible = filter === "all" ? decorated : decorated.filter((d) => d.category === filter);
+  const filtered = filter === "all" ? decorated : decorated.filter((d) => d.category === filter);
+  const visible = useMemo(() => {
+    const arr = [...filtered];
+    arr.sort((a, b) => {
+      const ta = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const tb = b.created_at ? new Date(b.created_at).getTime() : 0;
+      return sort === "newest" ? tb - ta : ta - tb;
+    });
+    return arr;
+  }, [filtered, sort]);
+
+  const isPreviewable = (mime: string, name: string) => {
+    const lower = name.toLowerCase();
+    return (
+      mime.startsWith("image/") ||
+      mime === "application/pdf" ||
+      lower.endsWith(".pdf") ||
+      /\.(png|jpe?g|gif|webp|svg)$/.test(lower)
+    );
+  };
 
   return (
     <section className="bg-card border border-border">
@@ -152,8 +187,8 @@ export default function TenantLeaseDocuments({ tenantId }: { tenantId: string })
         </div>
       </div>
 
-      {/* Filter chips */}
-      <div className="px-6 py-3 border-b border-border flex flex-wrap gap-2">
+      {/* Filter chips + sort */}
+      <div className="px-6 py-3 border-b border-border flex flex-wrap items-center gap-2">
         {(["all", ...CATEGORIES.map((c) => c.value)] as (Category | "all")[]).map((key) => {
           const active = filter === key;
           const label = key === "all" ? "All" : CATEGORY_LABEL[key as Category];
@@ -172,6 +207,16 @@ export default function TenantLeaseDocuments({ tenantId }: { tenantId: string })
             </button>
           );
         })}
+        <div className="ml-auto flex items-center gap-2">
+          <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
+          <Select value={sort} onValueChange={(v) => setSort(v as SortOrder)}>
+            <SelectTrigger className="h-8 w-[140px] text-xs"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="newest">Newest first</SelectItem>
+              <SelectItem value="oldest">Oldest first</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {loading ? (
@@ -202,6 +247,17 @@ export default function TenantLeaseDocuments({ tenantId }: { tenantId: string })
               >
                 {CATEGORY_LABEL[f.category]}
               </span>
+              {isPreviewable(f.metadata?.mimetype ?? "", f.display) && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handlePreview(f.name, f.display, f.metadata?.mimetype)}
+                  title="Preview"
+                  disabled={previewLoading}
+                >
+                  <Eye className="h-3.5 w-3.5" />
+                </Button>
+              )}
               <Button variant="ghost" size="sm" onClick={() => handleDownload(f.name)} title="Download">
                 <Download className="h-3.5 w-3.5" />
               </Button>
@@ -216,6 +272,30 @@ export default function TenantLeaseDocuments({ tenantId }: { tenantId: string })
       <p className="px-6 py-3 text-xs text-muted-foreground border-t border-border">
         Your landlord can view these documents. Files are private and not publicly accessible.
       </p>
+
+      <Dialog open={!!preview} onOpenChange={(o) => !o && setPreview(null)}>
+        <DialogContent className="max-w-4xl w-[95vw] h-[85vh] flex flex-col p-0 gap-0">
+          <DialogHeader className="px-6 py-4 border-b border-border">
+            <DialogTitle className="truncate pr-8">{preview?.display}</DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 min-h-0 bg-muted/30">
+            {preview && (
+              preview.mime.startsWith("image/") || /\.(png|jpe?g|gif|webp|svg)$/i.test(preview.display) ? (
+                <div className="w-full h-full flex items-center justify-center overflow-auto p-4">
+                  <img src={preview.url} alt={preview.display} className="max-w-full max-h-full object-contain" />
+                </div>
+              ) : (
+                <iframe src={preview.url} title={preview.display} className="w-full h-full border-0" />
+              )
+            )}
+          </div>
+          <div className="px-6 py-3 border-t border-border flex justify-end gap-2">
+            <Button variant="outline" size="sm" onClick={() => preview && handleDownload(preview.name)}>
+              <Download className="h-3.5 w-3.5" /> Download
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }
