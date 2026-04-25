@@ -178,6 +178,9 @@ export default function TenantDashboard() {
           </Link>
           <div className="ml-auto flex items-center gap-3">
             <span className="text-sm text-primary-foreground/70 hidden sm:inline">{user?.email}</span>
+            <Button variant="outline-light" size="sm" asChild>
+              <Link to="/tenant/profile"><User className="h-3.5 w-3.5" /> Profile</Link>
+            </Button>
             <Button variant="outline-light" size="sm" onClick={handleSignOut}><LogOut className="h-3.5 w-3.5" /> Sign out</Button>
           </div>
         </div>
