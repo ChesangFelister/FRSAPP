@@ -24,6 +24,7 @@ import AdminDashboard from "./pages/admin/Dashboard";
 import CaretakerDashboard from "./pages/caretaker/Dashboard";
 import ServiceProviderDashboard from "./pages/service-provider/Dashboard";
 import TenantDashboard from "./pages/tenant/Dashboard";
+import TenantProfile from "./pages/tenant/Profile";
 
 const queryClient = new QueryClient();
 
