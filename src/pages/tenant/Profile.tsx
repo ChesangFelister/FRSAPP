@@ -172,6 +172,9 @@ export default function TenantProfile() {
           </dl>
         </section>
 
+        {/* Lease documents */}
+        <TenantLeaseDocuments tenantId={tenant.id} />
+
         {/* Editable phone */}
         <section className="bg-card border border-border">
           <div className="px-6 py-4 border-b border-border">
