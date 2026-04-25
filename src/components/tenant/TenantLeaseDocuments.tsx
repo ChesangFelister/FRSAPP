@@ -137,15 +137,23 @@ export default function TenantLeaseDocuments({ tenantId }: { tenantId: string })
   }, [decorated]);
 
   const filtered = filter === "all" ? decorated : decorated.filter((d) => d.category === filter);
+  const q = query.trim().toLowerCase();
+  const searched = q
+    ? filtered.filter(
+        (d) =>
+          d.display.toLowerCase().includes(q) ||
+          CATEGORY_LABEL[d.category].toLowerCase().includes(q),
+      )
+    : filtered;
   const visible = useMemo(() => {
-    const arr = [...filtered];
+    const arr = [...searched];
     arr.sort((a, b) => {
       const ta = a.created_at ? new Date(a.created_at).getTime() : 0;
       const tb = b.created_at ? new Date(b.created_at).getTime() : 0;
       return sort === "newest" ? tb - ta : ta - tb;
     });
     return arr;
-  }, [filtered, sort]);
+  }, [searched, sort]);
 
   const isPreviewable = (mime: string, name: string) => {
     const lower = name.toLowerCase();
