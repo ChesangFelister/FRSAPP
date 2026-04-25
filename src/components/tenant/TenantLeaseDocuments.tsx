@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
-import { Upload, FileText, Download, Trash2, Loader2 } from "lucide-react";
+import { Upload, FileText, Download, Trash2, Loader2, Eye, ArrowUpDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+
+type SortOrder = "newest" | "oldest";
 
 type Category = "lease" | "id" | "receipt" | "other";
 
@@ -58,6 +61,19 @@ export default function TenantLeaseDocuments({ tenantId }: { tenantId: string })
   const [uploading, setUploading] = useState(false);
   const [uploadCategory, setUploadCategory] = useState<Category>("lease");
   const [filter, setFilter] = useState<Category | "all">("all");
+  const [sort, setSort] = useState<SortOrder>("newest");
+  const [preview, setPreview] = useState<{ name: string; display: string; url: string; mime: string } | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+
+  const handlePreview = async (fileName: string, display: string, mime?: string) => {
+    setPreviewLoading(true);
+    const { data, error } = await supabase.storage
+      .from("property-documents")
+      .createSignedUrl(`${folder}/${fileName}`, 300);
+    setPreviewLoading(false);
+    if (error || !data?.signedUrl) { toast.error(error?.message ?? "Could not load preview"); return; }
+    setPreview({ name: fileName, display, url: data.signedUrl, mime: mime ?? "" });
+  };
 
   const load = async () => {
     setLoading(true);
@@ -118,7 +134,26 @@ export default function TenantLeaseDocuments({ tenantId }: { tenantId: string })
     return base;
   }, [decorated]);
 
-  const visible = filter === "all" ? decorated : decorated.filter((d) => d.category === filter);
+  const filtered = filter === "all" ? decorated : decorated.filter((d) => d.category === filter);
+  const visible = useMemo(() => {
+    const arr = [...filtered];
+    arr.sort((a, b) => {
+      const ta = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const tb = b.created_at ? new Date(b.created_at).getTime() : 0;
+      return sort === "newest" ? tb - ta : ta - tb;
+    });
+    return arr;
+  }, [filtered, sort]);
+
+  const isPreviewable = (mime: string, name: string) => {
+    const lower = name.toLowerCase();
+    return (
+      mime.startsWith("image/") ||
+      mime === "application/pdf" ||
+      lower.endsWith(".pdf") ||
+      /\.(png|jpe?g|gif|webp|svg)$/.test(lower)
+    );
+  };
 
   return (
     <section className="bg-card border border-border">
