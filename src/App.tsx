@@ -83,6 +83,14 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/tenant/profile"
+              element={
+                <ProtectedRoute allowedRoles={["tenant"]}>
+                  <TenantProfile />
+                </ProtectedRoute>
+              }
+            />
 
             <Route path="*" element={<NotFound />} />
           </Routes>
