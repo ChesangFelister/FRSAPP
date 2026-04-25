@@ -63,6 +63,7 @@ export default function TenantLeaseDocuments({ tenantId }: { tenantId: string })
   const [uploadCategory, setUploadCategory] = useState<Category>("lease");
   const [filter, setFilter] = useState<Category | "all">("all");
   const [sort, setSort] = useState<SortOrder>("newest");
+  const [query, setQuery] = useState("");
   const [preview, setPreview] = useState<{ name: string; display: string; url: string; mime: string } | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
 
