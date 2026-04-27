@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Loader2, Receipt, LogOut, Wallet, Calendar, Home, Send, Download, User } from "lucide-react";
+import { Loader2, Receipt, LogOut, Wallet, Calendar, Home, Send, Download, User, CheckCircle2, Clock, AlertTriangle, CircleDashed } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -100,6 +100,44 @@ export default function TenantDashboard() {
     return { outstanding, paidYtd, next };
   }, [payments]);
 
+  // Latest payment status tracker — picks the most recent payment with activity
+  // (submitted intent or any amount paid), falling back to the most recent record.
+  const latest = useMemo(() => {
+    if (payments.length === 0) return null;
+    const withActivity = payments.find(p => p.submitted_at || Number(p.amount_paid) > 0);
+    const p = withActivity ?? payments[0];
+
+    type Tone = "completed" | "pending" | "failed" | "idle";
+    let tone: Tone = "idle";
+    let label = "No activity";
+    let detail = "Submit a payment to start tracking its status.";
+
+    if (p.status === "paid") {
+      tone = "completed";
+      label = "Completed";
+      detail = `Confirmed${p.paid_date ? ` on ${p.paid_date}` : ""}${p.method ? ` via ${p.method}` : ""}.`;
+    } else if (p.submitted_at && Number(p.amount_paid) === 0) {
+      tone = "pending";
+      label = "Pending confirmation";
+      detail = `Submitted ${p.submitted_method ?? ""} ${p.submitted_reference ? `· ${p.submitted_reference}` : ""} — awaiting landlord confirmation.`;
+    } else if (p.status === "partial") {
+      tone = "pending";
+      label = "Partially paid";
+      detail = `${formatKsh(Number(p.amount_paid))} of ${formatKsh(Number(p.amount_due))} confirmed. Balance still due.`;
+    } else if (p.status === "late") {
+      tone = "failed";
+      label = "Overdue";
+      detail = `Due ${p.due_date}. Submit your payment to clear this period.`;
+    } else {
+      tone = "idle";
+      label = "Awaiting payment";
+      detail = `Due ${p.due_date}.`;
+    }
+
+    return { p, tone, label, detail };
+  }, [payments]);
+
+
   const openPay = (p: Payment) => {
     setPayTarget(p);
     setIntentMethod(p.submitted_method ?? "M-Pesa");
@@ -194,6 +232,50 @@ export default function TenantDashboard() {
             {property?.name ?? "—"} {tenant.unit_label && <>· Unit {tenant.unit_label}</>}
           </p>
         </div>
+
+        {/* Latest payment status tracker */}
+        {latest && (() => {
+          const tones = {
+            completed: { wrap: "border-accent/40 bg-accent-soft", icon: "text-accent-foreground", Icon: CheckCircle2, chip: "bg-accent text-accent-foreground" },
+            pending:   { wrap: "border-blue-300 bg-blue-50", icon: "text-blue-700", Icon: Clock, chip: "bg-blue-600 text-white" },
+            failed:    { wrap: "border-destructive/40 bg-destructive/5", icon: "text-destructive", Icon: AlertTriangle, chip: "bg-destructive text-destructive-foreground" },
+            idle:      { wrap: "border-border bg-card", icon: "text-muted-foreground", Icon: CircleDashed, chip: "bg-secondary text-muted-foreground" },
+          } as const;
+          const tone = tones[latest.tone];
+          const Icon = tone.Icon;
+          return (
+            <section className={`border ${tone.wrap} p-5 flex flex-col sm:flex-row sm:items-center gap-4`}>
+              <div className={`shrink-0 h-12 w-12 rounded-full bg-background border border-border flex items-center justify-center ${tone.icon}`}>
+                <Icon className="h-6 w-6" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs uppercase tracking-wider text-muted-foreground">Last payment</span>
+                  <span className={`text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full ${tone.chip}`}>{latest.label}</span>
+                </div>
+                <div className="font-serif text-xl mt-1">
+                  {months[latest.p.period_month - 1]} {latest.p.period_year} · {formatKsh(Number(latest.p.amount_due))}
+                </div>
+                <p className="text-sm text-muted-foreground mt-0.5">{latest.detail}</p>
+              </div>
+              {latest.tone === "completed" && Number(latest.p.amount_paid) > 0 && (
+                <Button size="sm" variant="outline" onClick={() => downloadReceipt(latest.p)}>
+                  <Download className="h-3.5 w-3.5" /> Receipt
+                </Button>
+              )}
+              {(latest.tone === "failed" || (latest.tone === "idle" && latest.p.status !== "paid")) && (
+                <Button size="sm" onClick={() => openPay(latest.p)}>
+                  <Send className="h-3.5 w-3.5" /> Pay now
+                </Button>
+              )}
+              {latest.tone === "pending" && (
+                <Button size="sm" variant="outline" onClick={() => openPay(latest.p)}>
+                  <Send className="h-3.5 w-3.5" /> Update
+                </Button>
+              )}
+            </section>
+          );
+        })()}
 
         {/* Stats */}
         <div className="grid sm:grid-cols-3 gap-4">
