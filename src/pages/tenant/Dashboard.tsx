@@ -100,6 +100,44 @@ export default function TenantDashboard() {
     return { outstanding, paidYtd, next };
   }, [payments]);
 
+  // Latest payment status tracker — picks the most recent payment with activity
+  // (submitted intent or any amount paid), falling back to the most recent record.
+  const latest = useMemo(() => {
+    if (payments.length === 0) return null;
+    const withActivity = payments.find(p => p.submitted_at || Number(p.amount_paid) > 0);
+    const p = withActivity ?? payments[0];
+
+    type Tone = "completed" | "pending" | "failed" | "idle";
+    let tone: Tone = "idle";
+    let label = "No activity";
+    let detail = "Submit a payment to start tracking its status.";
+
+    if (p.status === "paid") {
+      tone = "completed";
+      label = "Completed";
+      detail = `Confirmed${p.paid_date ? ` on ${p.paid_date}` : ""}${p.method ? ` via ${p.method}` : ""}.`;
+    } else if (p.submitted_at && Number(p.amount_paid) === 0) {
+      tone = "pending";
+      label = "Pending confirmation";
+      detail = `Submitted ${p.submitted_method ?? ""} ${p.submitted_reference ? `· ${p.submitted_reference}` : ""} — awaiting landlord confirmation.`;
+    } else if (p.status === "partial") {
+      tone = "pending";
+      label = "Partially paid";
+      detail = `${formatKsh(Number(p.amount_paid))} of ${formatKsh(Number(p.amount_due))} confirmed. Balance still due.`;
+    } else if (p.status === "late") {
+      tone = "failed";
+      label = "Overdue";
+      detail = `Due ${p.due_date}. Submit your payment to clear this period.`;
+    } else {
+      tone = "idle";
+      label = "Awaiting payment";
+      detail = `Due ${p.due_date}.`;
+    }
+
+    return { p, tone, label, detail };
+  }, [payments]);
+
+
   const openPay = (p: Payment) => {
     setPayTarget(p);
     setIntentMethod(p.submitted_method ?? "M-Pesa");
