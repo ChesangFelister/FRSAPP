@@ -150,6 +150,32 @@ export default function TenantDashboard() {
     setPayOpen(true);
   };
 
+  const openUpdate = (p: Payment) => {
+    setUpdateTarget(p);
+    setUpdateMsg("");
+    setUpdateOpen(true);
+  };
+
+  const sendUpdateRequest = async () => {
+    if (!updateTarget) return;
+    const msg = updateMsg.trim();
+    if (msg.length < 5) { toast.error("Add a short message (5+ characters)"); return; }
+    if (msg.length > 1000) { toast.error("Message is too long (max 1000 characters)"); return; }
+    setSendingUpdate(true);
+    const stamp = `[Tenant update ${new Date().toISOString().slice(0, 16).replace("T", " ")}] ${msg}`;
+    const { error } = await supabase.rpc("submit_rent_payment_intent", {
+      _payment_id: updateTarget.id,
+      _method: updateTarget.submitted_method ?? updateTarget.method ?? "Note",
+      _reference: updateTarget.submitted_reference ?? updateTarget.reference ?? "—",
+      _note: stamp,
+    });
+    setSendingUpdate(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Update sent to your landlord.");
+    setUpdateOpen(false);
+    load();
+  };
+
   const submitIntent = async () => {
     if (!payTarget) return;
     if (!intentRef.trim()) { toast.error("Add a reference (e.g. M-Pesa code)"); return; }
