@@ -444,6 +444,39 @@ export default function TenantDashboard() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={updateOpen} onOpenChange={setUpdateOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-serif text-2xl">Send update to landlord</DialogTitle>
+            <DialogDescription>
+              {updateTarget && <>Regarding rent for {months[updateTarget.period_month - 1]} {updateTarget.period_year} — {formatKsh(Number(updateTarget.amount_due))}</>}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Message *</Label>
+              <Textarea
+                rows={5}
+                value={updateMsg}
+                onChange={(e) => setUpdateMsg(e.target.value)}
+                placeholder="e.g. I've sent the M-Pesa payment but the code hasn't reflected — can you confirm?"
+                maxLength={1000}
+              />
+              <div className="text-xs text-muted-foreground text-right">{updateMsg.length}/1000</div>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Your message is added to this payment's notes so your landlord can review and respond.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setUpdateOpen(false)}>Cancel</Button>
+            <Button onClick={sendUpdateRequest} disabled={sendingUpdate}>
+              {sendingUpdate ? "Sending…" : "Send update"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
