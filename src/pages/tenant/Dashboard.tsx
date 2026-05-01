@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Loader2, Receipt, LogOut, Wallet, Calendar, Home, Send, Download, User, CheckCircle2, Clock, AlertTriangle, CircleDashed } from "lucide-react";
+import { Loader2, Receipt, LogOut, Wallet, Calendar, Home, Send, Download, User, CheckCircle2, Clock, AlertTriangle, CircleDashed, MessageSquare } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -70,6 +70,10 @@ export default function TenantDashboard() {
   const [intentRef, setIntentRef] = useState("");
   const [intentNote, setIntentNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [updateOpen, setUpdateOpen] = useState(false);
+  const [updateTarget, setUpdateTarget] = useState<Payment | null>(null);
+  const [updateMsg, setUpdateMsg] = useState("");
+  const [sendingUpdate, setSendingUpdate] = useState(false);
 
   const load = async () => {
     if (!user) return;
@@ -144,6 +148,32 @@ export default function TenantDashboard() {
     setIntentRef(p.submitted_reference ?? "");
     setIntentNote("");
     setPayOpen(true);
+  };
+
+  const openUpdate = (p: Payment) => {
+    setUpdateTarget(p);
+    setUpdateMsg("");
+    setUpdateOpen(true);
+  };
+
+  const sendUpdateRequest = async () => {
+    if (!updateTarget) return;
+    const msg = updateMsg.trim();
+    if (msg.length < 5) { toast.error("Add a short message (5+ characters)"); return; }
+    if (msg.length > 1000) { toast.error("Message is too long (max 1000 characters)"); return; }
+    setSendingUpdate(true);
+    const stamp = `[Tenant update ${new Date().toISOString().slice(0, 16).replace("T", " ")}] ${msg}`;
+    const { error } = await supabase.rpc("submit_rent_payment_intent", {
+      _payment_id: updateTarget.id,
+      _method: updateTarget.submitted_method ?? updateTarget.method ?? "Note",
+      _reference: updateTarget.submitted_reference ?? updateTarget.reference ?? "—",
+      _note: stamp,
+    });
+    setSendingUpdate(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Update sent to your landlord.");
+    setUpdateOpen(false);
+    load();
   };
 
   const submitIntent = async () => {
@@ -271,6 +301,11 @@ export default function TenantDashboard() {
               {latest.tone === "pending" && (
                 <Button size="sm" variant="outline" onClick={() => openPay(latest.p)}>
                   <Send className="h-3.5 w-3.5" /> Update
+                </Button>
+              )}
+              {(latest.tone === "pending" || latest.tone === "failed") && (
+                <Button size="sm" variant="ghost" onClick={() => openUpdate(latest.p)}>
+                  <MessageSquare className="h-3.5 w-3.5" /> Send update
                 </Button>
               )}
             </section>
@@ -406,6 +441,39 @@ export default function TenantDashboard() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setPayOpen(false)}>Cancel</Button>
             <Button onClick={submitIntent} disabled={submitting}>{submitting ? "Submitting…" : "Submit"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={updateOpen} onOpenChange={setUpdateOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-serif text-2xl">Send update to landlord</DialogTitle>
+            <DialogDescription>
+              {updateTarget && <>Regarding rent for {months[updateTarget.period_month - 1]} {updateTarget.period_year} — {formatKsh(Number(updateTarget.amount_due))}</>}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Message *</Label>
+              <Textarea
+                rows={5}
+                value={updateMsg}
+                onChange={(e) => setUpdateMsg(e.target.value)}
+                placeholder="e.g. I've sent the M-Pesa payment but the code hasn't reflected — can you confirm?"
+                maxLength={1000}
+              />
+              <div className="text-xs text-muted-foreground text-right">{updateMsg.length}/1000</div>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Your message is added to this payment's notes so your landlord can review and respond.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setUpdateOpen(false)}>Cancel</Button>
+            <Button onClick={sendUpdateRequest} disabled={sendingUpdate}>
+              {sendingUpdate ? "Sending…" : "Send update"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
