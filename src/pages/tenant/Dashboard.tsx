@@ -303,6 +303,11 @@ export default function TenantDashboard() {
                   <Send className="h-3.5 w-3.5" /> Update
                 </Button>
               )}
+              {(latest.tone === "pending" || latest.tone === "failed") && (
+                <Button size="sm" variant="ghost" onClick={() => openUpdate(latest.p)}>
+                  <MessageSquare className="h-3.5 w-3.5" /> Send update
+                </Button>
+              )}
             </section>
           );
         })()}
