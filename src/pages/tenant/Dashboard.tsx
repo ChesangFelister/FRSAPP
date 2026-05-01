@@ -70,6 +70,10 @@ export default function TenantDashboard() {
   const [intentRef, setIntentRef] = useState("");
   const [intentNote, setIntentNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [updateOpen, setUpdateOpen] = useState(false);
+  const [updateTarget, setUpdateTarget] = useState<Payment | null>(null);
+  const [updateMsg, setUpdateMsg] = useState("");
+  const [sendingUpdate, setSendingUpdate] = useState(false);
 
   const load = async () => {
     if (!user) return;
