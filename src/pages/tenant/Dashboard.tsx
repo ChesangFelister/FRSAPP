@@ -400,6 +400,13 @@ export default function TenantDashboard() {
           )}
         </section>
 
+        <TenantIssues
+          tenantId={tenant.id}
+          ownerId={tenant.owner_id}
+          propertyId={tenant.property_id}
+          unitId={tenant.unit_id}
+        />
+
         <p className="text-xs text-muted-foreground text-center">
           <Receipt className="h-3 w-3 inline mr-1" />
           Real-time card &amp; M-Pesa checkout coming soon. For now, pay via M-Pesa or bank and submit your reference here.
