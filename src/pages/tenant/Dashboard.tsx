@@ -13,6 +13,7 @@ import {
 import { toast } from "sonner";
 import { formatKsh } from "@/lib/currency";
 import { downloadReceiptPdf, fetchLogoAsDataUrl } from "@/lib/receipt";
+import TenantIssues from "@/components/tenant/TenantIssues";
 
 interface TenantRow {
   id: string;
