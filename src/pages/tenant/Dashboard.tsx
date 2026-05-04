@@ -13,6 +13,7 @@ import {
 import { toast } from "sonner";
 import { formatKsh } from "@/lib/currency";
 import { downloadReceiptPdf, fetchLogoAsDataUrl } from "@/lib/receipt";
+import TenantIssues from "@/components/tenant/TenantIssues";
 
 interface TenantRow {
   id: string;
@@ -398,6 +399,13 @@ export default function TenantDashboard() {
             </div>
           )}
         </section>
+
+        <TenantIssues
+          tenantId={tenant.id}
+          ownerId={tenant.owner_id}
+          propertyId={tenant.property_id}
+          unitId={tenant.unit_id}
+        />
 
         <p className="text-xs text-muted-foreground text-center">
           <Receipt className="h-3 w-3 inline mr-1" />

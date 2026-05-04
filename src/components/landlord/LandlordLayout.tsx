@@ -1,5 +1,5 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Building2, Users, LogOut, Menu, Wallet, CalendarClock, HardHat, Receipt, Settings as SettingsIcon } from "lucide-react";
+import { LayoutDashboard, Building2, Users, LogOut, Menu, Wallet, CalendarClock, HardHat, Receipt, Settings as SettingsIcon, Wrench } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ const nav = [
   { to: "/landlord/tenants", label: "Tenants", icon: Users },
   { to: "/landlord/caretakers", label: "Caretakers", icon: HardHat },
   { to: "/landlord/payments", label: "Payments", icon: Receipt },
+  { to: "/landlord/issues", label: "Issues", icon: Wrench },
   { to: "/landlord/reminders", label: "Reminders", icon: CalendarClock },
   { to: "/landlord/settings", label: "Settings", icon: SettingsIcon },
   { to: "/landlord/financials", label: "Financials", icon: Wallet, soon: true },
