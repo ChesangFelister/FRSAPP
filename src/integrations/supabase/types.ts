@@ -47,6 +47,63 @@ export type Database = {
         }
         Relationships: []
       }
+      maintenance_issues: {
+        Row: {
+          assigned_at: string | null
+          caretaker_id: string | null
+          created_at: string
+          description: string
+          id: string
+          owner_id: string
+          photo_paths: string[]
+          priority: Database["public"]["Enums"]["issue_priority"]
+          property_id: string | null
+          resolution_note: string | null
+          resolved_at: string | null
+          status: Database["public"]["Enums"]["issue_status"]
+          tenant_id: string
+          title: string
+          unit_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          assigned_at?: string | null
+          caretaker_id?: string | null
+          created_at?: string
+          description: string
+          id?: string
+          owner_id: string
+          photo_paths?: string[]
+          priority?: Database["public"]["Enums"]["issue_priority"]
+          property_id?: string | null
+          resolution_note?: string | null
+          resolved_at?: string | null
+          status?: Database["public"]["Enums"]["issue_status"]
+          tenant_id: string
+          title: string
+          unit_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          assigned_at?: string | null
+          caretaker_id?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          owner_id?: string
+          photo_paths?: string[]
+          priority?: Database["public"]["Enums"]["issue_priority"]
+          property_id?: string | null
+          resolution_note?: string | null
+          resolved_at?: string | null
+          status?: Database["public"]["Enums"]["issue_status"]
+          tenant_id?: string
+          title?: string
+          unit_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -548,6 +605,8 @@ export type Database = {
         | "tenant"
         | "service_provider"
       document_category: "lease" | "inspection" | "certificate" | "other"
+      issue_priority: "low" | "medium" | "high"
+      issue_status: "open" | "in_progress" | "resolved"
       payment_status: "pending" | "paid" | "late" | "partial"
       property_status: "active" | "draft" | "archived"
       property_type: "apartment" | "house" | "commercial" | "land" | "other"
@@ -688,6 +747,8 @@ export const Constants = {
         "service_provider",
       ],
       document_category: ["lease", "inspection", "certificate", "other"],
+      issue_priority: ["low", "medium", "high"],
+      issue_status: ["open", "in_progress", "resolved"],
       payment_status: ["pending", "paid", "late", "partial"],
       property_status: ["active", "draft", "archived"],
       property_type: ["apartment", "house", "commercial", "land", "other"],
