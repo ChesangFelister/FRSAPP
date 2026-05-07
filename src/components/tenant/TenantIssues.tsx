@@ -235,6 +235,13 @@ export default function TenantIssues({ tenantId, ownerId, propertyId, unitId }: 
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <PhotoLightbox
+        urls={lightbox?.urls ?? []}
+        startIndex={lightbox?.index ?? 0}
+        open={!!lightbox}
+        onOpenChange={(o) => { if (!o) setLightbox(null); }}
+      />
     </section>
   );
 }
