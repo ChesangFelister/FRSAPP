@@ -53,6 +53,7 @@ export default function TenantIssues({ tenantId, ownerId, propertyId, unitId }: 
   const [files, setFiles] = useState<File[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
+  const [lightbox, setLightbox] = useState<{ urls: string[]; index: number } | null>(null);
 
   const load = async () => {
     const { data } = await supabase
