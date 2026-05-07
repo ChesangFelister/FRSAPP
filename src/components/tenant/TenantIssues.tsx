@@ -153,15 +153,24 @@ export default function TenantIssues({ tenantId, ownerId, propertyId, unitId }: 
                       <span className={`text-xs uppercase tracking-wider ${priorityCls[i.priority]}`}>{i.priority}</span>
                     </div>
                     <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{i.description}</p>
-                    {i.photo_paths.length > 0 && (
-                      <div className="flex gap-2 mt-2 flex-wrap">
-                        {i.photo_paths.map(p => photoUrls[p] && (
-                          <a key={p} href={photoUrls[p]} target="_blank" rel="noreferrer">
-                            <img src={photoUrls[p]} alt="" className="h-16 w-16 object-cover rounded-sm border border-border" />
-                          </a>
-                        ))}
-                      </div>
-                    )}
+                    {i.photo_paths.length > 0 && (() => {
+                      const urls = i.photo_paths.map(p => photoUrls[p]).filter(Boolean) as string[];
+                      return (
+                        <div className="flex gap-2 mt-2 flex-wrap">
+                          {urls.map((u, idx) => (
+                            <button
+                              key={u + idx}
+                              type="button"
+                              onClick={() => setLightbox({ urls, index: idx })}
+                              className="group relative h-16 w-16 overflow-hidden border border-border rounded-sm hover:border-primary transition-colors"
+                              aria-label={`View photo ${idx + 1}`}
+                            >
+                              <img src={u} alt="" className="h-full w-full object-cover" />
+                            </button>
+                          ))}
+                        </div>
+                      );
+                    })()}
                     {i.resolution_note && (
                       <div className="mt-2 text-xs bg-accent-soft border border-accent/30 p-2 rounded-sm">
                         <span className="font-medium">Resolution: </span>{i.resolution_note}
