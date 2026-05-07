@@ -9,6 +9,7 @@ import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import PhotoLightbox from "./PhotoLightbox";
 
 interface Issue {
   id: string;
