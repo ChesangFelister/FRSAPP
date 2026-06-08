@@ -329,6 +329,37 @@ export default function AdminDashboard() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={!!editUser} onOpenChange={(o) => !o && setEditUser(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit roles</DialogTitle>
+            <DialogDescription>
+              {editUser?.full_name || editUser?.email} — select all roles this user should have.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            {ALL_ROLES.map((r) => (
+              <label key={r} className="flex items-center gap-3 cursor-pointer">
+                <Checkbox
+                  checked={editRoles.has(r)}
+                  onCheckedChange={() => toggleEditRole(r)}
+                  id={`role-${r}`}
+                />
+                <Label htmlFor={`role-${r}`} className="capitalize cursor-pointer">
+                  {r.replace("_", " ")}
+                </Label>
+              </label>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setEditUser(null)} disabled={savingRoles}>Cancel</Button>
+            <Button onClick={saveEditRoles} disabled={savingRoles}>
+              {savingRoles ? "Saving…" : "Save roles"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
