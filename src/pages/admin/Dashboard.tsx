@@ -52,6 +52,9 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [pendingDelete, setPendingDelete] = useState<{ table: string; id: string; label: string } | null>(null);
+  const [editUser, setEditUser] = useState<ManagedUser | null>(null);
+  const [editRoles, setEditRoles] = useState<Set<AppRole>>(new Set());
+  const [savingRoles, setSavingRoles] = useState(false);
 
   const loadAll = async () => {
     setLoading(true);
