@@ -19,8 +19,13 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import {
-  Users, Building2, Wrench, Receipt, ShieldCheck, LogOut, Trash2, Plus, X,
+  Users, Building2, Wrench, Receipt, ShieldCheck, LogOut, Trash2, Plus, X, Pencil,
 } from "lucide-react";
+import {
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { format } from "date-fns";
 
 type ManagedUser = {
