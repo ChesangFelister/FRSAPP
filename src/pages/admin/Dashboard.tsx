@@ -98,6 +98,42 @@ export default function AdminDashboard() {
     loadAll();
   };
 
+  const openEdit = (u: ManagedUser) => {
+    setEditUser(u);
+    setEditRoles(new Set(u.roles));
+  };
+  const toggleEditRole = (r: AppRole) => {
+    setEditRoles((prev) => {
+      const next = new Set(prev);
+      next.has(r) ? next.delete(r) : next.add(r);
+      return next;
+    });
+  };
+  const saveEditRoles = async () => {
+    if (!editUser) return;
+    setSavingRoles(true);
+    const current = new Set(editUser.roles);
+    const toAdd = [...editRoles].filter((r) => !current.has(r));
+    const toRemove = [...current].filter((r) => !editRoles.has(r));
+    try {
+      for (const role of toAdd) {
+        const { error } = await supabase.functions.invoke("admin-users", { body: { action: "addRole", userId: editUser.id, role } });
+        if (error) throw error;
+      }
+      for (const role of toRemove) {
+        const { error } = await supabase.functions.invoke("admin-users", { body: { action: "removeRole", userId: editUser.id, role } });
+        if (error) throw error;
+      }
+      toast.success("Roles updated");
+      setEditUser(null);
+      await loadAll();
+    } catch (e: any) {
+      toast.error(e.message ?? "Failed to update roles");
+    } finally {
+      setSavingRoles(false);
+    }
+  };
+
   const confirmDelete = async () => {
     if (!pendingDelete) return;
     const { table, id } = pendingDelete;
