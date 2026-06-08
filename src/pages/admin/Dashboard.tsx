@@ -213,6 +213,7 @@ export default function AdminDashboard() {
                         <TableHead>Roles</TableHead>
                         <TableHead>Add role</TableHead>
                         <TableHead>Joined</TableHead>
+                        <TableHead className="w-[60px]" />
                       </TableRow>
                     </TableHeader>
                     <TableBody>
