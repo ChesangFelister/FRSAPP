@@ -257,6 +257,11 @@ export default function AdminDashboard() {
                           <TableCell className="text-xs text-muted-foreground">
                             {format(new Date(u.created_at), "MMM d, yyyy")}
                           </TableCell>
+                          <TableCell>
+                            <Button size="icon" variant="ghost" onClick={() => openEdit(u)} aria-label="Edit roles">
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
