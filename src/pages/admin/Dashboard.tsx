@@ -19,8 +19,13 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import {
-  Users, Building2, Wrench, Receipt, ShieldCheck, LogOut, Trash2, Plus, X,
+  Users, Building2, Wrench, Receipt, ShieldCheck, LogOut, Trash2, Plus, X, Pencil,
 } from "lucide-react";
+import {
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { format } from "date-fns";
 
 type ManagedUser = {
@@ -47,6 +52,9 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [pendingDelete, setPendingDelete] = useState<{ table: string; id: string; label: string } | null>(null);
+  const [editUser, setEditUser] = useState<ManagedUser | null>(null);
+  const [editRoles, setEditRoles] = useState<Set<AppRole>>(new Set());
+  const [savingRoles, setSavingRoles] = useState(false);
 
   const loadAll = async () => {
     setLoading(true);
@@ -88,6 +96,42 @@ export default function AdminDashboard() {
     if (error) return toast.error(error.message);
     toast.success(`Removed ${role}`);
     loadAll();
+  };
+
+  const openEdit = (u: ManagedUser) => {
+    setEditUser(u);
+    setEditRoles(new Set(u.roles));
+  };
+  const toggleEditRole = (r: AppRole) => {
+    setEditRoles((prev) => {
+      const next = new Set(prev);
+      next.has(r) ? next.delete(r) : next.add(r);
+      return next;
+    });
+  };
+  const saveEditRoles = async () => {
+    if (!editUser) return;
+    setSavingRoles(true);
+    const current = new Set(editUser.roles);
+    const toAdd = [...editRoles].filter((r) => !current.has(r));
+    const toRemove = [...current].filter((r) => !editRoles.has(r));
+    try {
+      for (const role of toAdd) {
+        const { error } = await supabase.functions.invoke("admin-users", { body: { action: "addRole", userId: editUser.id, role } });
+        if (error) throw error;
+      }
+      for (const role of toRemove) {
+        const { error } = await supabase.functions.invoke("admin-users", { body: { action: "removeRole", userId: editUser.id, role } });
+        if (error) throw error;
+      }
+      toast.success("Roles updated");
+      setEditUser(null);
+      await loadAll();
+    } catch (e: any) {
+      toast.error(e.message ?? "Failed to update roles");
+    } finally {
+      setSavingRoles(false);
+    }
   };
 
   const confirmDelete = async () => {
@@ -169,6 +213,7 @@ export default function AdminDashboard() {
                         <TableHead>Roles</TableHead>
                         <TableHead>Add role</TableHead>
                         <TableHead>Joined</TableHead>
+                        <TableHead className="w-[60px]" />
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -211,6 +256,11 @@ export default function AdminDashboard() {
                           </TableCell>
                           <TableCell className="text-xs text-muted-foreground">
                             {format(new Date(u.created_at), "MMM d, yyyy")}
+                          </TableCell>
+                          <TableCell>
+                            <Button size="icon" variant="ghost" onClick={() => openEdit(u)} aria-label="Edit roles">
+                              <Pencil className="h-4 w-4" />
+                            </Button>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -279,6 +329,37 @@ export default function AdminDashboard() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={!!editUser} onOpenChange={(o) => !o && setEditUser(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit roles</DialogTitle>
+            <DialogDescription>
+              {editUser?.full_name || editUser?.email} — select all roles this user should have.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            {ALL_ROLES.map((r) => (
+              <label key={r} className="flex items-center gap-3 cursor-pointer">
+                <Checkbox
+                  checked={editRoles.has(r)}
+                  onCheckedChange={() => toggleEditRole(r)}
+                  id={`role-${r}`}
+                />
+                <Label htmlFor={`role-${r}`} className="capitalize cursor-pointer">
+                  {r.replace("_", " ")}
+                </Label>
+              </label>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setEditUser(null)} disabled={savingRoles}>Cancel</Button>
+            <Button onClick={saveEditRoles} disabled={savingRoles}>
+              {savingRoles ? "Saving…" : "Save roles"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
