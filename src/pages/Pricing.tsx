@@ -7,7 +7,7 @@ import SiteFooter from "@/components/SiteFooter";
 const tiers = [
   {
     name: "Starter",
-    price: "$49",
+    price: "KSh 2,500",
     cadence: "/ month",
     desc: "For owners taking their first portfolio digital.",
     features: ["Up to 10 units", "Tenant ledger & invoicing", "Document vault (5 GB)", "Email support"],
@@ -15,7 +15,7 @@ const tiers = [
   },
   {
     name: "Professional",
-    price: "$149",
+    price: "KSh 7,500",
     cadence: "/ month",
     desc: "For growing landlords with active operations.",
     features: ["Up to 75 units", "Caretaker & service-provider workflows", "Financial reporting suite", "Reminder automation", "Priority support"],
