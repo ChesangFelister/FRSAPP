@@ -18,6 +18,12 @@ export default function Auth() {
   const initialTab = params.get("mode") === "register" ? "register" : "login";
   const [tab, setTab] = useState(initialTab);
 
+  // Persist selected plan from query so it survives email confirm round-trips
+  useEffect(() => {
+    const plan = params.get("plan");
+    if (plan) sessionStorage.setItem("pendingPlan", plan.toLowerCase());
+  }, [params]);
+
   // ✅ ROLE-BASED REDIRECT (tenant takes priority if user is invited)
   useEffect(() => {
     if (!user) return;
@@ -38,6 +44,14 @@ export default function Auth() {
       return;
     }
 
+    // If a plan is pending and not yet paid, route to checkout instead of dashboard
+    const pendingPlan = sessionStorage.getItem("pendingPlan");
+    const planPaid = sessionStorage.getItem("planPaid") === "1";
+    if (pendingPlan && !planPaid) {
+      navigate(`/checkout?plan=${encodeURIComponent(pendingPlan)}`, { replace: true });
+      return;
+    }
+
     const roleRoutes: Record<AppRole, string> = {
       admin: "/admin",
       landlord: "/landlord/dashboard",
@@ -53,6 +67,7 @@ export default function Auth() {
       navigate(roleRoutes[userRole], { replace: true });
     }
   }, [user, roles, navigate, params]);
+
 
   // Login state
   const [loginEmail, setLoginEmail] = useState("");
