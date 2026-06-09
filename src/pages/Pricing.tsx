@@ -70,8 +70,9 @@ export default function Pricing() {
                 ))}
               </ul>
               <Button asChild size="lg" variant={t.highlight ? "default" : "outline"} className="w-full">
-                <Link to="/auth?mode=register">{t.name === "Enterprise" ? "Talk to us" : "Start with " + t.name}</Link>
+                <Link to={t.name === "Enterprise" ? "/auth?mode=register" : `/auth?mode=register&plan=${t.name.toLowerCase()}`}>{t.name === "Enterprise" ? "Talk to us" : "Start with " + t.name}</Link>
               </Button>
+
             </div>
           ))}
         </div>
