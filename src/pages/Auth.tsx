@@ -44,13 +44,15 @@ export default function Auth() {
       return;
     }
 
-    // If a plan is pending and not yet paid, route to checkout instead of dashboard
-    const pendingPlan = sessionStorage.getItem("pendingPlan");
-    const planPaid = sessionStorage.getItem("planPaid") === "1";
-    if (pendingPlan && !planPaid) {
+    // If user is a landlord and hasn't paid, route to checkout instead of dashboard
+    const planPaid = localStorage.getItem(`planPaid:${user.id}`) === "1";
+    const isLandlord = roles.includes("landlord");
+    if (isLandlord && !planPaid) {
+      const pendingPlan = sessionStorage.getItem("pendingPlan") || "starter";
       navigate(`/checkout?plan=${encodeURIComponent(pendingPlan)}`, { replace: true });
       return;
     }
+
 
     const roleRoutes: Record<AppRole, string> = {
       admin: "/admin",
