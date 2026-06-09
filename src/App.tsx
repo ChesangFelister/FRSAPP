@@ -10,7 +10,9 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
 import Pricing from "./pages/Pricing";
+import Checkout from "./pages/Checkout";
 import NotFound from "./pages/NotFound";
+
 
 import LandlordDashboard from "./pages/landlord/Dashboard";
 import Properties from "./pages/landlord/Properties";
