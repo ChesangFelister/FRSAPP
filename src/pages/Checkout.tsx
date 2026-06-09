@@ -58,12 +58,13 @@ export default function Checkout() {
         const s = String(res?.status ?? res?.response?.Status ?? "").toUpperCase();
         if (s.includes("SUCCESS") || s === "COMPLETED" || s === "PAID") {
           setStatus("success");
-          sessionStorage.setItem("planPaid", "1");
+          if (user?.id) localStorage.setItem(`planPaid:${user.id}`, "1");
           sessionStorage.removeItem("pendingPlan");
           toast.success("Payment received");
           setTimeout(() => navigate(destination, { replace: true }), 1500);
           return;
         }
+
         if (s.includes("FAIL") || s.includes("CANCEL")) {
           setStatus("failed");
           toast.error("Payment failed or cancelled");
