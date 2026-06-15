@@ -21,6 +21,19 @@ export default function ProtectedRoute({ children, allowedRoles, requirePayment 
   const { user, roles, loading } = useAuth();
   const location = useLocation();
 
+  const roleDestination = (() => {
+    const roleRoutes: Record<AppRole, string> = {
+      admin: "/admin",
+      landlord: "/landlord/dashboard",
+      caretaker: "/caretaker",
+      tenant: "/tenant/dashboard",
+      service_provider: "/service-provider",
+    };
+    const priority: AppRole[] = ["tenant", "admin", "landlord", "caretaker", "service_provider"];
+    const r = priority.find((x) => roles.includes(x));
+    return r ? roleRoutes[r] : "/";
+  })();
+
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -32,12 +45,13 @@ export default function ProtectedRoute({ children, allowedRoles, requirePayment 
   if (!user) return <Navigate to="/auth" replace />;
 
   if (allowedRoles && !roles.some((r) => allowedRoles.includes(r))) {
-    return <Navigate to="/" replace />;
+    return <Navigate to={roleDestination} replace />;
   }
 
   // Payment gate — applies to paying roles only, excludes the /checkout page itself
   if (
     requirePayment &&
+    roles.includes("admin") === false &&
     roles.some((r) => PAYING_ROLES.includes(r)) &&
     !hasPaidPlan(user.id) &&
     location.pathname !== "/checkout"

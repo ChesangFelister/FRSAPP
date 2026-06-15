@@ -34,18 +34,21 @@ function formatBytes(bytes: number | null) {
 }
 
 export default function PropertyDocuments({ propertyId }: { propertyId: string }) {
-  const { user } = useAuth();
+  const { user, roles } = useAuth();
   const [docs, setDocs] = useState<Doc[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [category, setCategory] = useState<Category>("lease");
 
   const load = async () => {
-    const { data, error } = await supabase
+    const query = supabase
       .from("property_documents")
       .select("*")
       .eq("property_id", propertyId)
       .order("created_at", { ascending: false });
+    const { data, error } = roles.includes("admin")
+      ? await query
+      : await query.eq("owner_id", user.id);
     if (error) toast.error(error.message);
     setDocs((data as Doc[]) ?? []);
     setLoading(false);
@@ -94,7 +97,9 @@ export default function PropertyDocuments({ propertyId }: { propertyId: string }
   const handleDelete = async (doc: Doc) => {
     if (!confirm(`Delete "${doc.name}"?`)) return;
     await supabase.storage.from("property-documents").remove([doc.file_path]);
-    const { error } = await supabase.from("property_documents").delete().eq("id", doc.id);
+    const { error } = roles.includes("admin")
+      ? await supabase.from("property_documents").delete().eq("id", doc.id)
+      : await supabase.from("property_documents").delete().eq("id", doc.id).eq("owner_id", user.id);
     if (error) { toast.error(error.message); return; }
     toast.success("Document deleted");
     setDocs((d) => d.filter((x) => x.id !== doc.id));

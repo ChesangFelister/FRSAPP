@@ -1,5 +1,7 @@
 import { Building2, Users, Wrench, BarChart3, FileText, Bell } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useMemo } from "react";
+import { useAuth, AppRole } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
@@ -23,6 +25,26 @@ const roles = [
 ];
 
 export default function Index() {
+  const { user, roles: userRoles, loading } = useAuth();
+  const navigate = useNavigate();
+
+  const destination = useMemo(() => {
+    const roleRoutes: Record<AppRole, string> = {
+      admin: "/admin",
+      landlord: "/landlord/dashboard",
+      caretaker: "/caretaker",
+      tenant: "/tenant/dashboard",
+      service_provider: "/service-provider",
+    };
+    const priority: AppRole[] = ["tenant", "admin", "landlord", "caretaker", "service_provider"];
+    const r = priority.find((x) => userRoles.includes(x));
+    return r ? roleRoutes[r] : "/";
+  }, [roles]);
+
+  useEffect(() => {
+    if (!loading && user) navigate(destination, { replace: true });
+  }, [loading, user, navigate, destination]);
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <SiteHeader />
@@ -50,7 +72,10 @@ export default function Index() {
             </p>
             <div className="flex flex-wrap gap-4">
               <Button asChild size="lg" variant="gold">
-                <Link to="/auth?mode=register">Open your portfolio</Link>
+                <Link to="/pricing">Get started</Link>
+              </Button>
+              <Button asChild size="lg" variant="outline-light">
+                <a href="mailto:hello@propertypal.com?subject=Request%20a%20demo">Request a demo</a>
               </Button>
               <Button asChild size="lg" variant="outline-light">
                 <Link to="/pricing">View pricing</Link>
@@ -61,7 +86,7 @@ export default function Index() {
       </section>
 
       {/* TRUST BAR */}
-      <section className="border-y border-border bg-secondary/40">
+      {/* <section className="border-y border-border bg-secondary/40">
         <div className="container-wide py-10 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
           {[
             { k: "12,400+", v: "Units under management" },
@@ -75,7 +100,7 @@ export default function Index() {
             </div>
           ))}
         </div>
-      </section>
+      </section> */}
 
       {/* FEATURES */}
       <section id="features" className="py-24 lg:py-32">
@@ -135,8 +160,9 @@ export default function Index() {
             Set up your first building in under thirty minutes. Invite your team. Replace five tools with one.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
-            <Button asChild size="lg"><Link to="/auth?mode=register">Create your account</Link></Button>
+            <Button asChild size="lg"><Link to="/pricing">Get started</Link></Button>
             <Button asChild size="lg" variant="outline"><Link to="/pricing">Compare plans</Link></Button>
+            <Button asChild size="lg" variant="outline-light"><a href="mailto:hello@propertypal.com?subject=Request%20a%20demo">Request a demo</a></Button>
           </div>
         </div>
       </section>

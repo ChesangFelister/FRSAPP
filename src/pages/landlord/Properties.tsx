@@ -27,27 +27,33 @@ const statusStyles: Record<string, string> = {
 };
 
 export default function Properties() {
-  const { user } = useAuth();
+  const { user, roles } = useAuth();
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
 
   useEffect(() => {
     if (!user) return;
-    supabase.from("properties").select("*").eq("owner_id", user.id).order("created_at", { ascending: false }).then(({ data }) => {
+    const queryBuilder = supabase.from("properties").select("*").order("created_at", { ascending: false });
+    if (!roles.includes("admin")) {
+      queryBuilder.eq("owner_id", user.id);
+    }
+    queryBuilder.then(({ data }) => {
       setProperties((data as Property[]) ?? []);
       setLoading(false);
     });
-  }, [user]);
+  }, [user, roles]);
 
   const filtered = properties.filter(p =>
     !query || p.name.toLowerCase().includes(query.toLowerCase()) || p.city.toLowerCase().includes(query.toLowerCase())
   );
 
+  const showNewProperty = roles.includes("landlord");
+
   return (
     <LandlordLayout
       title="Properties"
-      action={<Button asChild><Link to="/landlord/properties/new"><Plus className="h-4 w-4" /> New property</Link></Button>}
+      action={showNewProperty ? <Button asChild><Link to="/landlord/properties/new"><Plus className="h-4 w-4" /> New property</Link></Button> : undefined}
     >
       <div className="mb-6 max-w-md relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

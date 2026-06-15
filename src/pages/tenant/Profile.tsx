@@ -59,12 +59,13 @@ export default function TenantProfile() {
   }, [user]);
 
   const savePhone = async () => {
-    if (!tenant) return;
+    if (!tenant || !user) return;
     setSaving(true);
     const { error } = await supabase
       .from("tenants")
       .update({ phone: phone.trim() || null })
-      .eq("id", tenant.id);
+      .eq("id", tenant.id)
+      .eq("user_id", user.id);
     setSaving(false);
     if (error) { toast.error(error.message); return; }
     toast.success("Phone number updated");

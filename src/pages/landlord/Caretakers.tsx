@@ -77,7 +77,7 @@ export default function Caretakers() {
       notes: form.notes.trim() || null,
     };
     const { error } = editing
-      ? await supabase.from("caretakers").update(payload).eq("id", editing.id)
+      ? await supabase.from("caretakers").update(payload).eq("id", editing.id).eq("owner_id", user.id)
       : await supabase.from("caretakers").insert(payload);
     setSaving(false);
     if (error) { toast.error(error.message); return; }
@@ -87,7 +87,7 @@ export default function Caretakers() {
   };
 
   const handleDelete = async (id: string) => {
-    const { error } = await supabase.from("caretakers").delete().eq("id", id);
+    const { error } = await supabase.from("caretakers").delete().eq("id", id).eq("owner_id", user.id);
     if (error) { toast.error(error.message); return; }
     toast.success("Caretaker removed");
     load();

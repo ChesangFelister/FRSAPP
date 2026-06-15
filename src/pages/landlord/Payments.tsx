@@ -66,7 +66,7 @@ const blank = {
 };
 
 export default function Payments() {
-  const { user } = useAuth();
+  const { user, roles } = useAuth();
   const [loading, setLoading] = useState(true);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [tenants, setTenants] = useState<Tenant[]>([]);
@@ -232,7 +232,7 @@ export default function Payments() {
     };
 
     const res = editing
-      ? await supabase.from("rent_payments").update(payload).eq("id", editing.id)
+      ? await supabase.from("rent_payments").update(payload).eq("id", editing.id).eq("owner_id", user.id)
       : await supabase.from("rent_payments").insert(payload);
 
     if (res.error) {
@@ -247,17 +247,22 @@ export default function Payments() {
 
   const handleDelete = async (p: Payment) => {
     if (!confirm("Delete this payment record?")) return;
-    const { error } = await supabase.from("rent_payments").delete().eq("id", p.id);
+    const { error } = roles && !roles.includes("admin")
+      ? await supabase.from("rent_payments").delete().eq("id", p.id).eq("owner_id", user.id)
+      : await supabase.from("rent_payments").delete().eq("id", p.id);
     if (error) { toast.error(error.message); return; }
     toast.success("Deleted");
     load();
   };
 
   const markPaid = async (p: Payment) => {
-    const { error } = await supabase.from("rent_payments").update({
+    const q = supabase.from("rent_payments").update({
       amount_paid: p.amount_due,
       paid_date: new Date().toISOString().slice(0, 10),
     }).eq("id", p.id);
+    const { error } = roles && !roles.includes("admin")
+      ? await q.eq("owner_id", user.id)
+      : await q;
     if (error) { toast.error(error.message); return; }
     toast.success("Marked as paid");
     load();

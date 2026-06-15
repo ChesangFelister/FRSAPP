@@ -124,6 +124,6 @@ export async function getPayheroPaymentStatus(request: PayheroPaymentStatusReque
 }
 
 export const PLANS: Record<string, { name: string; amount: number }> = {
-  starter: { name: "Starter", amount: 2500 },
+  starter: { name: "Starter", amount: 2 },
   professional: { name: "Professional", amount: 7500 },
 };

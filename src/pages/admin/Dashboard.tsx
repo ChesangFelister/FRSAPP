@@ -8,6 +8,19 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupLabel,
+  SidebarInset,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
+import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
@@ -40,10 +53,19 @@ type ManagedUser = {
 
 const ALL_ROLES: AppRole[] = ["admin", "landlord", "caretaker", "tenant", "service_provider"];
 
+const ADMIN_NAV_ITEMS = [
+  { value: "users", label: "Users & roles", icon: Users },
+  { value: "properties", label: "Properties", icon: Building2 },
+  { value: "tenants", label: "Tenants", icon: Users },
+  { value: "payments", label: "Payments", icon: Receipt },
+  { value: "issues", label: "Issues", icon: Wrench },
+] as const;
+
 export default function AdminDashboard() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
 
+  const [activeTab, setActiveTab] = useState<(typeof ADMIN_NAV_ITEMS)[number]["value"]>("users");
   const [users, setUsers] = useState<ManagedUser[]>([]);
   const [properties, setProperties] = useState<any[]>([]);
   const [tenants, setTenants] = useState<any[]>([]);
@@ -154,23 +176,52 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-subtle">
-      <header className="bg-primary text-primary-foreground">
-        <div className="container-wide flex items-center h-16 gap-4">
-          <Link to="/" className="flex items-center gap-2">
-            <ShieldCheck className="h-5 w-5 text-accent" />
-            <span className="font-serif text-xl">Admin Console</span>
-          </Link>
-          <div className="ml-auto flex items-center gap-3">
-            <span className="text-xs text-primary-foreground/60 hidden sm:inline">{user?.email}</span>
-            <Button variant="outline-light" size="sm" onClick={handleSignOut}>
-              <LogOut className="h-3.5 w-3.5" /> Sign out
-            </Button>
+    <SidebarProvider className="min-h-screen bg-subtle">
+      <Sidebar side="left" collapsible="icon">
+        <SidebarContent>
+          <SidebarGroup>
+            <SidebarGroupLabel className="text-base font-semibold text-muted-foreground">Admin Console</SidebarGroupLabel>
+            <SidebarMenu>
+              {ADMIN_NAV_ITEMS.map(({ value, label, icon: Icon }) => (
+                <SidebarMenuItem key={value}>
+                  <SidebarMenuButton
+                    isActive={activeTab === value}
+                    onClick={() => setActiveTab(value)}
+                  >
+                    <Icon className="h-4 w-4" />
+                    <span>{label}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroup>
+        </SidebarContent>
+        <SidebarFooter className="mt-auto border-t border-sidebar-border">
+          <div className="flex flex-col gap-2 p-2 text-sm text-muted-foreground">
+            <span className="font-medium">Signed in as</span>
+            <span className="truncate">{user?.email ?? "Unknown"}</span>
           </div>
-        </div>
-      </header>
+        </SidebarFooter>
+      </Sidebar>
 
-      <main className="container-wide py-8 space-y-8">
+      <SidebarInset className="flex-1">
+        <header className="bg-primary text-primary-foreground">
+          <div className="container-wide flex items-center h-16 gap-4">
+            <SidebarTrigger className="block md:hidden" />
+            <Link to="/" className="flex items-center gap-2">
+              <ShieldCheck className="h-5 w-5 text-accent" />
+              <span className="font-serif text-xl">Admin Console</span>
+            </Link>
+            <div className="ml-auto flex items-center gap-3">
+              <span className="text-xs text-primary-foreground/60 hidden sm:inline">{user?.email}</span>
+              <Button variant="outline-light" size="sm" onClick={handleSignOut}>
+                <LogOut className="h-3.5 w-3.5" /> Sign out
+              </Button>
+            </div>
+          </div>
+        </header>
+
+        <main className="container-wide py-8 space-y-8">
         <div>
           <h1 className="font-serif text-3xl mb-1">Platform overview</h1>
           <p className="text-muted-foreground text-sm">Full visibility across every account, property, payment, and issue.</p>
@@ -360,7 +411,8 @@ export default function AdminDashboard() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </SidebarInset>
+  </SidebarProvider>
   );
 }
 

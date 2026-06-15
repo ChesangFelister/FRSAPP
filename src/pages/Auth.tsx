@@ -45,9 +45,16 @@ export default function Auth() {
     }
 
     // If user is a landlord and hasn't paid, route to checkout instead of dashboard
+    // Admins always land on the admin console
+    if (roles.includes("admin")) {
+      navigate("/admin", { replace: true });
+      return;
+    }
+
+    // If user is a landlord and hasn't paid, route to checkout instead of dashboard
     const planPaid = localStorage.getItem(`planPaid:${user.id}`) === "1";
-    const isLandlord = roles.includes("landlord");
-    if (isLandlord && !planPaid) {
+    const isPayingLandlord = roles.includes("landlord");
+    if (isPayingLandlord && !planPaid) {
       const pendingPlan = sessionStorage.getItem("pendingPlan") || "starter";
       navigate(`/checkout?plan=${encodeURIComponent(pendingPlan)}`, { replace: true });
       return;

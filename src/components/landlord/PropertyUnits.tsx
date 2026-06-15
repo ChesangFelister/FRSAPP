@@ -21,7 +21,7 @@ interface Unit {
 }
 
 export default function PropertyUnits({ propertyId, defaultRent }: { propertyId: string; defaultRent: number }) {
-  const { user } = useAuth();
+  const { user, roles } = useAuth();
   const [units, setUnits] = useState<Unit[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
@@ -31,8 +31,10 @@ export default function PropertyUnits({ propertyId, defaultRent }: { propertyId:
   const [saving, setSaving] = useState(false);
 
   const load = async () => {
-    const { data } = await supabase
-      .from("units").select("*").eq("property_id", propertyId).order("label");
+    const query = supabase.from("units").select("*").eq("property_id", propertyId).order("label");
+    const { data } = roles.includes("admin")
+      ? await query
+      : await query.eq("owner_id", user.id);
     setUnits((data as Unit[]) ?? []);
     setLoading(false);
   };
@@ -51,7 +53,9 @@ export default function PropertyUnits({ propertyId, defaultRent }: { propertyId:
     setSaving(true);
     const payload = { owner_id: user.id, property_id: propertyId, label, monthly_rent_ksh: rent };
     const { error } = editing
-      ? await supabase.from("units").update(payload).eq("id", editing.id)
+      ? await (roles.includes("admin")
+        ? supabase.from("units").update(payload).eq("id", editing.id)
+        : supabase.from("units").update(payload).eq("id", editing.id).eq("owner_id", user.id))
       : await supabase.from("units").insert(payload);
     setSaving(false);
     if (error) { toast.error(error.message); return; }
@@ -63,7 +67,9 @@ export default function PropertyUnits({ propertyId, defaultRent }: { propertyId:
   const remove = async (u: Unit) => {
     if (u.status === "occupied") { toast.error("Unit is occupied — reassign tenant first"); return; }
     if (!confirm(`Delete unit ${u.label}?`)) return;
-    const { error } = await supabase.from("units").delete().eq("id", u.id);
+    const { error } = roles.includes("admin")
+      ? await supabase.from("units").delete().eq("id", u.id)
+      : await supabase.from("units").delete().eq("id", u.id).eq("owner_id", user.id);
     if (error) { toast.error(error.message); return; }
     toast.success("Unit deleted"); load();
   };

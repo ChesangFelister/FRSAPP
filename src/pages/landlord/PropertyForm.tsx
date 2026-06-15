@@ -30,15 +30,18 @@ interface FormState {
   description: string;
   cover_image_url: string | null;
   caretaker_id: string | null;
+  owner_id: string;
 }
 
 const empty: FormState = {
   name: "", address: "", city: "", property_type: "apartment",
   units_count: 1, monthly_rent_ksh: 0, status: "active", description: "", cover_image_url: null,
   caretaker_id: null,
+  owner_id: "",
 };
 
 interface CaretakerOpt { id: string; full_name: string; }
+interface LandlordOption { id: string; full_name: string | null; email: string | null; }
 
 const NONE = "__none__";
 
@@ -46,21 +49,46 @@ export default function PropertyForm() {
   const { id } = useParams();
   const isNew = !id || id === "new";
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, roles } = useAuth();
   const [form, setForm] = useState<FormState>(empty);
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
   const [caretakers, setCaretakers] = useState<CaretakerOpt[]>([]);
+  const [landlords, setLandlords] = useState<LandlordOption[]>([]);
 
   useEffect(() => {
     if (!user) return;
-    supabase.from("caretakers").select("id, full_name").eq("owner_id", user.id).order("full_name")
-      .then(({ data }) => setCaretakers((data as CaretakerOpt[]) ?? []));
-  }, [user]);
+
+    const loadCaretakers = async () => {
+      const ownerId = roles.includes("admin") ? form.owner_id : user.id;
+      if (ownerId) {
+        const { data: builder } = await supabase.from("caretakers").select("id, full_name").eq("owner_id", ownerId).order("full_name");
+        setCaretakers((builder as CaretakerOpt[]) ?? []);
+      } else {
+        setCaretakers([]);
+      }
+
+      if (roles.includes("admin")) {
+        const { data: landlordRoles } = await supabase.from("user_roles").select("user_id").eq("role", "landlord");
+        const landlordIds = Array.from(new Set((landlordRoles ?? []).map((item) => item.user_id))).filter(Boolean);
+        const { data: profiles } = landlordIds.length
+          ? await supabase.from("profiles").select("id, full_name, email").in("id", landlordIds)
+          : { data: [] };
+        setLandlords((profiles as LandlordOption[]) ?? []);
+      }
+    };
+
+    loadCaretakers();
+  }, [user, roles, form.owner_id]);
 
   useEffect(() => {
     if (isNew || !user) return;
-    supabase.from("properties").select("*").eq("id", id).maybeSingle().then(({ data, error }) => {
+    // scope fetch: non-admins must own the property
+    const q = !roles.includes("admin")
+      ? supabase.from("properties").select("*").eq("id", id).eq("owner_id", user.id).maybeSingle()
+      : supabase.from("properties").select("*").eq("id", id).maybeSingle();
+
+    q.then(({ data, error }) => {
       if (error || !data) { toast.error("Property not found"); navigate("/landlord/properties"); return; }
       setForm({
         name: data.name, address: data.address, city: data.city,
@@ -68,6 +96,7 @@ export default function PropertyForm() {
         monthly_rent_ksh: Number(data.monthly_rent_ksh), status: data.status,
         description: data.description ?? "", cover_image_url: data.cover_image_url,
         caretaker_id: (data as any).caretaker_id ?? null,
+        owner_id: (data as any).owner_id ?? "",
       });
       setLoading(false);
     });
@@ -82,11 +111,17 @@ export default function PropertyForm() {
       toast.error("Selected caretaker doesn't belong to your account");
       return;
     }
+    if (roles.includes("admin") && !form.owner_id) {
+      toast.error("Select a landlord for this property.");
+      return;
+    }
     setSaving(true);
-    const payload = { ...form, owner_id: user.id };
+    const payload = { ...form, owner_id: roles.includes("admin") ? form.owner_id : user.id };
     const { data, error } = isNew
       ? await supabase.from("properties").insert(payload).select().single()
-      : await supabase.from("properties").update(payload).eq("id", id!).select().single();
+      : await (roles.includes("admin")
+        ? supabase.from("properties").update(payload).eq("id", id!).select().single()
+        : supabase.from("properties").update(payload).eq("id", id!).eq("owner_id", user.id).select().single());
     setSaving(false);
     if (error) { toast.error(error.message); return; }
     toast.success(isNew ? "Property created" : "Changes saved");
@@ -95,7 +130,9 @@ export default function PropertyForm() {
 
   const handleDelete = async () => {
     if (!id || isNew) return;
-    const { error } = await supabase.from("properties").delete().eq("id", id);
+    const { error } = roles.includes("admin")
+      ? await supabase.from("properties").delete().eq("id", id)
+      : await supabase.from("properties").delete().eq("id", id).eq("owner_id", user.id);
     if (error) { toast.error(error.message); return; }
     toast.success("Property deleted");
     navigate("/landlord/properties");
@@ -179,6 +216,27 @@ export default function PropertyForm() {
               </Select>
               <p className="text-xs text-muted-foreground">Active properties appear in your public listings.</p>
             </div>
+
+            {roles.includes("admin") && (
+              <div className="space-y-2">
+                <Label htmlFor="owner">Landlord owner *</Label>
+                <Select value={form.owner_id} onValueChange={(v) => update("owner_id", v)}>
+                  <SelectTrigger id="owner"><SelectValue placeholder="Select landlord" /></SelectTrigger>
+                  <SelectContent>
+                    {landlords.length === 0
+                      ? <SelectItem value="">No landlords available</SelectItem>
+                      : landlords.map((landlord) => (
+                        <SelectItem key={landlord.id} value={landlord.id}>
+                          {landlord.full_name ?? landlord.email ?? landlord.id}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Assign this property to a landlord account. Landlord accounts are loaded from current users with the landlord role.
+                </p>
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="caretaker">Assigned caretaker</Label>

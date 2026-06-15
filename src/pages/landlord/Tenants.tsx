@@ -46,7 +46,7 @@ const statusStyles: Record<Status, string> = {
 };
 
 export default function Tenants() {
-  const { user } = useAuth();
+  const { user, roles } = useAuth();
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [properties, setProperties] = useState<Property[]>([]);
   const [units, setUnits] = useState<Unit[]>([]);
@@ -63,9 +63,15 @@ export default function Tenants() {
   const load = async () => {
     if (!user) return;
     const [{ data: t }, { data: p }, { data: u }] = await Promise.all([
-      supabase.from("tenants").select("*").eq("owner_id", user.id).order("created_at", { ascending: false }),
-      supabase.from("properties").select("id, name").eq("owner_id", user.id).order("name"),
-      supabase.from("units").select("*").eq("owner_id", user.id),
+      roles.includes("admin")
+        ? supabase.from("tenants").select("*").order("created_at", { ascending: false })
+        : supabase.from("tenants").select("*").eq("owner_id", user.id).order("created_at", { ascending: false }),
+      roles.includes("admin")
+        ? supabase.from("properties").select("id, name, owner_id").order("name")
+        : supabase.from("properties").select("id, name").eq("owner_id", user.id).order("name"),
+      roles.includes("admin")
+        ? supabase.from("units").select("*")
+        : supabase.from("units").select("*").eq("owner_id", user.id),
     ]);
     setTenants((t as Tenant[]) ?? []);
     setProperties(p ?? []);
@@ -73,7 +79,7 @@ export default function Tenants() {
     setLoading(false);
   };
 
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, [user]);
+  useEffect(() => { load(); }, [user, roles]);
 
   const openNew = () => {
     setEditing(null);
@@ -123,8 +129,9 @@ export default function Tenants() {
     setSaving(true);
     // Auto-fill unit_label from selected unit (so legacy display still works)
     const selectedUnit = units.find(u => u.id === form.unit_id);
+    const selectedProperty = properties.find((p) => p.id === form.property_id);
     const payload = {
-      owner_id: user.id,
+      owner_id: selectedProperty?.owner_id ?? user.id,
       full_name: form.full_name,
       email: form.email || null,
       phone: form.phone || null,
@@ -137,7 +144,9 @@ export default function Tenants() {
       status: form.status,
     };
     const { error } = editing
-      ? await supabase.from("tenants").update(payload).eq("id", editing.id)
+      ? await (roles.includes("admin")
+        ? supabase.from("tenants").update(payload).eq("id", editing.id)
+        : supabase.from("tenants").update(payload).eq("id", editing.id).eq("owner_id", user.id))
       : await supabase.from("tenants").insert(payload);
     setSaving(false);
     if (error) { toast.error(error.message); return; }
@@ -156,7 +165,9 @@ export default function Tenants() {
 
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this tenant record?")) return;
-    const { error } = await supabase.from("tenants").delete().eq("id", id);
+    const { error } = roles.includes("admin")
+      ? await supabase.from("tenants").delete().eq("id", id)
+      : await supabase.from("tenants").delete().eq("id", id).eq("owner_id", user.id);
     if (error) { toast.error(error.message); return; }
     toast.success("Tenant deleted");
     load();

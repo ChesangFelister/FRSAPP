@@ -43,7 +43,7 @@ const priorityCls = {
 type Filter = "all" | "open" | "in_progress" | "resolved";
 
 export default function LandlordIssues() {
-  const { user } = useAuth();
+  const { user, roles } = useAuth();
   const [issues, setIssues] = useState<Issue[]>([]);
   const [tenants, setTenants] = useState<Record<string, { full_name: string; unit_label: string | null }>>({});
   const [properties, setProperties] = useState<Record<string, string>>({});
@@ -116,7 +116,9 @@ export default function LandlordIssues() {
     if (statusVal === "resolved" && !active.resolved_at) patch.resolved_at = new Date().toISOString();
     if (statusVal !== "resolved") patch.resolved_at = null;
 
-    const { error } = await supabase.from("maintenance_issues").update(patch).eq("id", active.id);
+    const { error } = roles && !roles.includes("admin")
+      ? await supabase.from("maintenance_issues").update(patch).eq("id", active.id).eq("owner_id", user.id)
+      : await supabase.from("maintenance_issues").update(patch).eq("id", active.id);
     setSaving(false);
     if (error) return toast.error(error.message);
     toast.success("Issue updated");

@@ -11,6 +11,7 @@ import {
   initiateMpesaStkPush,
   getPayheroPaymentStatus,
 } from "@/lib/payhero";
+import { formatKsh } from "@/lib/currency";
 import logo from "@/assets/logo.png";
 
 const roleRoutes: Record<AppRole, string> = {
@@ -42,8 +43,14 @@ export default function Checkout() {
   }, [roles]);
 
   useEffect(() => {
-    if (!loading && !user) navigate("/auth?mode=login&plan=" + planKey, { replace: true });
-  }, [loading, user, navigate, planKey]);
+    if (!loading && user && roles.includes("admin")) {
+      navigate("/admin", { replace: true });
+      return;
+    }
+    if (!loading && !user) {
+      navigate("/auth?mode=login&plan=" + planKey, { replace: true });
+    }
+  }, [loading, user, roles, navigate, planKey]);
 
   // Poll status
   useEffect(() => {
@@ -61,7 +68,6 @@ export default function Checkout() {
           if (user?.id) localStorage.setItem(`planPaid:${user.id}`, "1");
           sessionStorage.removeItem("pendingPlan");
           toast.success("Payment received");
-          setTimeout(() => navigate(destination, { replace: true }), 1500);
           return;
         }
 
@@ -80,7 +86,15 @@ export default function Checkout() {
       stop = true;
       clearTimeout(t);
     };
-  }, [status, checkoutRequestId, externalReference, destination, navigate]);
+  }, [status, checkoutRequestId, externalReference, user?.id]);
+
+  // Redirect on successful payment
+  useEffect(() => {
+    if (status === "success" && destination !== "/") {
+      const timer = setTimeout(() => navigate(destination, { replace: true }), 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [status, destination, navigate]);
 
   const handlePay = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -105,8 +119,9 @@ export default function Checkout() {
       setExternalReference(ref);
       setStatus("pending");
       toast.success("Check your phone to enter M-PESA PIN");
-    } catch (err: any) {
-      toast.error(err?.message ?? "Failed to initiate payment");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err ?? "Failed to initiate payment");
+      toast.error(message);
     } finally {
       setSubmitting(false);
     }
@@ -128,7 +143,7 @@ export default function Checkout() {
           </p>
 
           <div className="flex items-baseline gap-2 mb-8">
-            <span className="font-serif text-4xl">KSh {plan.amount.toLocaleString()}</span>
+            <span className="font-serif text-4xl">{formatKsh(plan.amount)}</span>
             <span className="text-muted-foreground text-sm">/ month</span>
           </div>
 
@@ -164,7 +179,7 @@ export default function Checkout() {
               </div>
               <Button type="submit" size="lg" className="w-full" disabled={submitting}>
                 {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                Pay KSh {plan.amount.toLocaleString()}
+                Pay {formatKsh(plan.amount)}
               </Button>
               {status === "failed" && (
                 <p className="text-sm text-destructive text-center">

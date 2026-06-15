@@ -12,7 +12,7 @@ import { formatKsh } from "@/lib/currency";
 
 export default function PropertyDetail() {
   const { id } = useParams();
-  const { user } = useAuth();
+  const { user, roles } = useAuth();
   const [property, setProperty] = useState<any>(null);
   const [tenants, setTenants] = useState<any[]>([]);
   const [units, setUnits] = useState<any[]>([]);
@@ -23,8 +23,15 @@ export default function PropertyDetail() {
   useEffect(() => {
     if (!id || !user) return;
     const load = async () => {
+      // Build property query so landlords only fetch properties they own
+      let propQuery = supabase.from("properties").select("*").eq("id", id).maybeSingle();
+      if (!roles.includes("admin")) {
+        // apply owner filter for non-admins
+        propQuery = supabase.from("properties").select("*").eq("id", id).eq("owner_id", user.id).maybeSingle();
+      }
+
       const [{ data: p }, { data: t }, { data: u }] = await Promise.all([
-        supabase.from("properties").select("*").eq("id", id).maybeSingle(),
+        propQuery,
         supabase.from("tenants").select("*").eq("property_id", id).order("created_at", { ascending: false }),
         supabase.from("units").select("*").eq("property_id", id).order("label"),
       ]);
@@ -38,7 +45,7 @@ export default function PropertyDetail() {
       setLoading(false);
     };
     load();
-  }, [id, user]);
+  }, [id, user, roles]);
 
   if (loading) return <LandlordLayout><div className="text-muted-foreground">Loading…</div></LandlordLayout>;
   if (!property) return <LandlordLayout><div>Not found.</div></LandlordLayout>;
@@ -53,11 +60,11 @@ export default function PropertyDetail() {
   return (
     <LandlordLayout
       title={property.name}
-      action={
+      action={roles.includes("landlord") ? (
         <Button asChild variant="outline">
           <Link to={`/landlord/properties/${property.id}/edit`}><Pencil className="h-4 w-4" /> Edit</Link>
         </Button>
-      }
+      ) : undefined}
     >
       <Link to="/landlord/properties" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6">
         <ArrowLeft className="h-4 w-4" /> Back to properties
