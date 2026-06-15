@@ -11,9 +11,11 @@ interface Props {
 // Roles that must subscribe before accessing their dashboard.
 // Invited users (tenant/caretaker/service_provider) and admins are exempt.
 const PAYING_ROLES: AppRole[] = ["landlord"];
+const BYPASS_PAYMENT_EMAIL = "chesangfelister@gmail.com";
 
-export function hasPaidPlan(userId: string | undefined | null) {
+export function hasPaidPlan(userId: string | undefined | null, userEmail?: string | null) {
   if (!userId) return false;
+  if (userEmail?.toLowerCase() === BYPASS_PAYMENT_EMAIL) return true;
   return localStorage.getItem(`planPaid:${userId}`) === "1";
 }
 
@@ -53,7 +55,7 @@ export default function ProtectedRoute({ children, allowedRoles, requirePayment 
     requirePayment &&
     roles.includes("admin") === false &&
     roles.some((r) => PAYING_ROLES.includes(r)) &&
-    !hasPaidPlan(user.id) &&
+    !hasPaidPlan(user.id, user.email) &&
     location.pathname !== "/checkout"
   ) {
     const plan = sessionStorage.getItem("pendingPlan") || "starter";

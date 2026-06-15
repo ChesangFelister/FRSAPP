@@ -50,14 +50,14 @@ export default function SiteHeader() {
   }, [isLandlord, user]);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border/60 bg-background/85 backdrop-blur">
-      <div className="container-wide flex h-16 items-center justify-between">
+    <header className="sticky top-0 z-40 border-b border-border/60 bg-background/95 shadow-sm backdrop-blur">
+      <div className="container-wide flex h-16 items-center justify-between gap-3">
         <Link to="/" className="flex items-center gap-2">
-          <img src="/frs-logo.png" alt="Flashrentsolution logo" className="h-9 w-9 object-contain" />
+          <img src="/frs-logo.png" alt="Flashrentsolution logo" className="h-8 w-8 object-contain" />
           <span className="font-serif text-xl tracking-tight">Flashrentsolution</span>
         </Link>
 
-        <nav className="hidden md:flex items-center gap-8 text-sm">
+        <nav className="hidden md:flex items-center gap-8 text-sm font-medium">
           {user && roles.includes("admin") && (
             <Link to="/admin" className="text-muted-foreground hover:text-foreground transition-colors">Admin</Link>
           )}
@@ -73,7 +73,7 @@ export default function SiteHeader() {
                 {pendingCount > 0 && (
                   <span
                     aria-label={`${pendingCount} pending tenant actions`}
-                    className="inline-flex min-w-[1.25rem] h-5 items-center justify-center rounded-full bg-accent px-1.5 text-[10px] font-medium text-accent-foreground"
+                    className="inline-flex min-w-[1.25rem] h-5 items-center justify-center rounded-full bg-accent px-1.5 text-[10px] font-semibold text-accent-foreground"
                   >
                     {pendingCount}
                   </span>
@@ -103,7 +103,12 @@ export default function SiteHeader() {
               <Button variant="outline" size="sm" onClick={async () => { await signOut(); navigate("/"); }}>Sign out</Button>
             </>
           ) : (
-            <Button size="sm" onClick={() => navigate("/pricing")}>Subscribe to start</Button>
+            <>
+              <Button size="sm" variant="gold" asChild>
+                <Link to="/demo" className="inline-block px-3 py-1">Request a demo</Link>
+              </Button>
+              <Button size="sm" onClick={() => navigate("/pricing")}>Get started</Button>
+            </>
           )}
         </div>
       </div>

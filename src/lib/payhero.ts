@@ -88,35 +88,60 @@ const buildStatusUrls = ({ checkoutRequestId, externalReference }: PayheroPaymen
 };
 
 export async function getPayheroPaymentStatus(request: PayheroPaymentStatusRequest): Promise<PayheroPaymentStatusResponse> {
-  const urls = buildStatusUrls(request);
-  if (urls.length === 0) {
+  if (!request.checkoutRequestId && !request.externalReference) {
     throw new Error("Either checkoutRequestId or externalReference is required to query PayHero status.");
   }
 
-  let lastError: Error | null = null;
-  for (const url of urls) {
-    try {
-      const response = await fetch(url, {
-        method: "GET",
-        headers: {
-          Authorization: generateAuthToken(),
-          "Content-Type": "application/json",
-        },
-      });
+  // Try multiple hostname variants in case the provider uses a different host
+  const baseCandidates = new Set<string>([
+    PAYHERO_API_URL,
+    // try swapping common prefixes
+    PAYHERO_API_URL.replace("backend.", "api."),
+    PAYHERO_API_URL.replace("backend.", ""),
+  ]);
 
-      if (!response.ok) {
+  let lastError: Error | null = null;
+  for (const base of baseCandidates) {
+    const urls = new Set<string>();
+    if (request.checkoutRequestId) {
+      urls.add(`${base}/${encodeURIComponent(request.checkoutRequestId)}`);
+      urls.add(`${base}?checkout_request_id=${encodeURIComponent(request.checkoutRequestId)}`);
+    }
+    if (request.externalReference) {
+      urls.add(`${base}?external_reference=${encodeURIComponent(request.externalReference)}`);
+      urls.add(`${base}?external_reference=${encodeURIComponent(request.externalReference)}&limit=1`);
+    }
+
+    for (const url of urls) {
+      try {
+        const response = await fetch(url, {
+          method: "GET",
+          headers: {
+            Authorization: generateAuthToken(),
+            "Content-Type": "application/json",
+          },
+        });
+
         const text = await response.text();
-        lastError = new Error(`PayHero status request failed: ${response.status} ${text}`);
+        if (!response.ok) {
+          // keep the body to help debugging
+          lastError = new Error(`PayHero status request failed (${response.status}) at ${url}: ${text}`);
+          // try next URL/base
+          continue;
+        }
+
+        // Try parse JSON (if any)
+        try {
+          const data = JSON.parse(text) as PayheroPaymentStatusResponse;
+          return data;
+        } catch (err) {
+          // If not JSON, return raw text wrapped
+          return { success: true, status: text } as PayheroPaymentStatusResponse;
+        }
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error));
         continue;
       }
-
-      const data = (await response.json()) as PayheroPaymentStatusResponse;
-      if (data) {
-        return data;
-      }
-    } catch (error) {
-      lastError = error instanceof Error ? error : new Error(String(error));
-      continue;
     }
   }
 

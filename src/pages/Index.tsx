@@ -75,7 +75,7 @@ export default function Index() {
                 <Link to="/pricing">Get started</Link>
               </Button>
               <Button asChild size="lg" variant="outline-light">
-                <a href="mailto:hello@propertypal.com?subject=Request%20a%20demo">Request a demo</a>
+                <Link to="/demo">Request a demo</Link>
               </Button>
               <Button asChild size="lg" variant="outline-light">
                 <Link to="/pricing">View pricing</Link>
@@ -162,7 +162,7 @@ export default function Index() {
           <div className="flex flex-wrap justify-center gap-4">
             <Button asChild size="lg"><Link to="/pricing">Get started</Link></Button>
             <Button asChild size="lg" variant="outline"><Link to="/pricing">Compare plans</Link></Button>
-            <Button asChild size="lg" variant="outline-light"><a href="mailto:hello@propertypal.com?subject=Request%20a%20demo">Request a demo</a></Button>
+            <Button asChild size="lg" variant="outline-light"><Link to="/demo">Request a demo</Link></Button>
           </div>
         </div>
       </section>

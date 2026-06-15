@@ -11,6 +11,7 @@ import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
 import Pricing from "./pages/Pricing";
 import Checkout from "./pages/Checkout";
+import Demo from "./pages/Demo";
 import NotFound from "./pages/NotFound";
 
 
@@ -45,7 +46,7 @@ const App = () => (
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
-
+            <Route path="/demo" element={<Demo />} />
 
             <Route
               path="/admin"

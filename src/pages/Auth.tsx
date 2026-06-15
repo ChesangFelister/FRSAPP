@@ -51,10 +51,10 @@ export default function Auth() {
       return;
     }
 
-    // If user is a landlord and hasn't paid, route to checkout instead of dashboard
+    const isBypassPaymentEmail = user.email?.toLowerCase() === "chesangfelister@gmail.com";
     const planPaid = localStorage.getItem(`planPaid:${user.id}`) === "1";
     const isPayingLandlord = roles.includes("landlord");
-    if (isPayingLandlord && !planPaid) {
+    if (isPayingLandlord && !planPaid && !isBypassPaymentEmail) {
       const pendingPlan = sessionStorage.getItem("pendingPlan") || "starter";
       navigate(`/checkout?plan=${encodeURIComponent(pendingPlan)}`, { replace: true });
       return;

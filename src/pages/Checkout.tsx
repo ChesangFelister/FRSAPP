@@ -62,7 +62,16 @@ export default function Checkout() {
           checkoutRequestId: checkoutRequestId || undefined,
           externalReference: externalReference || undefined,
         });
-        const s = String(res?.status ?? res?.response?.Status ?? "").toUpperCase();
+        // Normalize PayHero responses: some responses set `status` boolean,
+        // others include a `response.Status` string or `response.ResultCode`.
+        const rawStatus = res?.response?.Status ?? res?.status ?? res?.response?.status ?? "";
+        let s = "";
+        if (typeof rawStatus === "string") s = rawStatus;
+        else if (typeof rawStatus === "boolean") s = rawStatus ? "SUCCESS" : "FAILED";
+        else if (res?.response?.ResultCode !== undefined) s = Number(res.response.ResultCode) === 0 ? "SUCCESS" : "FAILED";
+        else s = String(rawStatus ?? "");
+        s = String(s).toUpperCase();
+
         if (s.includes("SUCCESS") || s === "COMPLETED" || s === "PAID") {
           setStatus("success");
           if (user?.id) localStorage.setItem(`planPaid:${user.id}`, "1");
