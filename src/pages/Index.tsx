@@ -39,7 +39,7 @@ export default function Index() {
     const priority: AppRole[] = ["tenant", "admin", "landlord", "caretaker", "service_provider"];
     const r = priority.find((x) => userRoles.includes(x));
     return r ? roleRoutes[r] : "/";
-  }, [roles]);
+  }, [userRoles]);
 
   useEffect(() => {
     if (!loading && user) navigate(destination, { replace: true });

@@ -63,6 +63,13 @@ Deno.serve(async (req) => {
       return json({ ok: true });
     }
 
+    if (action === "deleteUser") {
+      const { userId } = body as { userId: string };
+      const { error } = await admin.auth.admin.deleteUser(userId);
+      if (error) throw error;
+      return json({ ok: true });
+    }
+
     return json({ error: "Unknown action" }, 400);
   } catch (e) {
     return json({ error: (e as Error).message }, 500);

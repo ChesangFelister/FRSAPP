@@ -73,10 +73,18 @@ export default function AdminDashboard() {
   const [issues, setIssues] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
-  const [pendingDelete, setPendingDelete] = useState<{ table: string; id: string; label: string } | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<{
+    kind: "record" | "user";
+    table?: string;
+    id: string;
+    label: string;
+  } | null>(null);
   const [editUser, setEditUser] = useState<ManagedUser | null>(null);
   const [editRoles, setEditRoles] = useState<Set<AppRole>>(new Set());
   const [savingRoles, setSavingRoles] = useState(false);
+  const [editProperty, setEditProperty] = useState<any | null>(null);
+  const [editPropertyForm, setEditPropertyForm] = useState<any>({});
+  const [savingProperty, setSavingProperty] = useState(false);
 
   const loadAll = async () => {
     setLoading(true);
@@ -96,6 +104,19 @@ export default function AdminDashboard() {
   };
 
   useEffect(() => { loadAll(); }, []);
+
+  const ownerMap = useMemo(
+    () => Object.fromEntries(users.map((u) => [u.id, u.full_name || u.email || "Unknown"])),
+    [users]
+  );
+  const tenantMap = useMemo(
+    () => Object.fromEntries(tenants.map((t) => [t.id, t.full_name || "Unknown"])),
+    [tenants]
+  );
+  const propertyMap = useMemo(
+    () => Object.fromEntries(properties.map((p) => [p.id, p.name || "Unknown"])),
+    [properties]
+  );
 
   const filteredUsers = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -156,12 +177,50 @@ export default function AdminDashboard() {
     }
   };
 
+  const openEditProperty = (prop: any) => {
+    setEditProperty(prop);
+    setEditPropertyForm({
+      name: prop.name,
+      address: prop.address,
+      city: prop.city,
+      property_type: prop.property_type || "apartment",
+      units_count: prop.units_count || 1,
+      monthly_rent_ksh: prop.monthly_rent_ksh || 0,
+      status: prop.status || "active",
+      description: prop.description || "",
+    });
+  };
+
+  const saveEditProperty = async () => {
+    if (!editProperty) return;
+    setSavingProperty(true);
+    try {
+      const { error } = await supabase
+        .from("properties")
+        .update(editPropertyForm)
+        .eq("id", editProperty.id);
+      if (error) throw error;
+      toast.success("Property updated");
+      setEditProperty(null);
+      await loadAll();
+    } catch (e: any) {
+      toast.error(e.message ?? "Failed to update property");
+    } finally {
+      setSavingProperty(false);
+    }
+  };
+
   const confirmDelete = async () => {
     if (!pendingDelete) return;
-    const { table, id } = pendingDelete;
-    const { error } = await supabase.from(table as any).delete().eq("id", id);
-    if (error) toast.error(error.message);
-    else { toast.success("Deleted"); loadAll(); }
+    if (pendingDelete.kind === "user") {
+      const { error } = await supabase.functions.invoke("admin-users", { body: { action: "deleteUser", userId: pendingDelete.id } });
+      if (error) toast.error(error.message);
+      else { toast.success("User deleted"); loadAll(); }
+    } else {
+      const { error } = await supabase.from(pendingDelete.table as any).delete().eq("id", pendingDelete.id);
+      if (error) toast.error(error.message);
+      else { toast.success("Deleted"); loadAll(); }
+    }
     setPendingDelete(null);
   };
 
@@ -235,7 +294,7 @@ export default function AdminDashboard() {
           <Stat icon={Wrench} label="Open issues" value={counts.issues} />
         </div>
 
-        <Tabs defaultValue="users" className="w-full">
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value)} className="w-full">
           <TabsList>
             <TabsTrigger value="users">Users & roles</TabsTrigger>
             <TabsTrigger value="properties">Properties</TabsTrigger>
@@ -264,7 +323,7 @@ export default function AdminDashboard() {
                         <TableHead>Roles</TableHead>
                         <TableHead>Add role</TableHead>
                         <TableHead>Joined</TableHead>
-                        <TableHead className="w-[60px]" />
+                        <TableHead className="w-[90px]">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -309,9 +368,20 @@ export default function AdminDashboard() {
                             {format(new Date(u.created_at), "MMM d, yyyy")}
                           </TableCell>
                           <TableCell>
-                            <Button size="icon" variant="ghost" onClick={() => openEdit(u)} aria-label="Edit roles">
-                              <Pencil className="h-4 w-4" />
-                            </Button>
+                            <div className="flex items-center gap-1">
+                              <Button size="icon" variant="ghost" onClick={() => openEdit(u)} aria-label="Edit roles">
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => setPendingDelete({ kind: "user", id: u.id, label: u.email ?? u.full_name ?? "user" })}
+                                aria-label="Delete user"
+                                className="text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -323,43 +393,90 @@ export default function AdminDashboard() {
           </TabsContent>
 
           <TabsContent value="properties" className="mt-6">
-            <DataCard title="All properties" rows={properties} columns={[
-              { k: "name", h: "Name" },
-              { k: "address", h: "Address", render: (r) => `${r.address}, ${r.city}` },
-              { k: "units_count", h: "Units" },
-              { k: "monthly_rent_ksh", h: "Rent (KES)" },
-              { k: "status", h: "Status" },
-            ]} onDelete={(r) => setPendingDelete({ table: "properties", id: r.id, label: r.name })} />
+            <Card>
+              <CardHeader><CardTitle className="font-serif">All properties ({properties.length})</CardTitle></CardHeader>
+              <CardContent className="overflow-x-auto">
+                {properties.length === 0 ? <p className="text-sm text-muted-foreground">No properties.</p> : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Owner</TableHead>
+                        <TableHead>Address</TableHead>
+                        <TableHead>Units</TableHead>
+                        <TableHead>Rent (KES)</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="w-[100px]">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {properties.map((r) => (
+                        <TableRow key={r.id}>
+                          <TableCell className="font-medium">{r.name}</TableCell>
+                          <TableCell>{ownerMap[r.owner_id] ?? "—"}</TableCell>
+                          <TableCell>{r.address}, {r.city}</TableCell>
+                          <TableCell>{r.units_count}</TableCell>
+                          <TableCell>{r.monthly_rent_ksh}</TableCell>
+                          <TableCell><Badge variant="outline">{r.status}</Badge></TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-1">
+                              <Button size="icon" variant="ghost" onClick={() => openEditProperty(r)} aria-label="Edit property">
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => setPendingDelete({ kind: "record", table: "properties", id: r.id, label: r.name })}
+                                aria-label="Delete property"
+                                className="text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="tenants" className="mt-6">
             <DataCard title="All tenants" rows={tenants} columns={[
-              { k: "full_name", h: "Name" },
+              { k: "full_name", h: "Name", render: (r) => <span className="font-medium">{r.full_name}</span> },
               { k: "email", h: "Email" },
-              { k: "phone", h: "Phone" },
+              { k: "property_id", h: "Property", render: (r) => propertyMap[r.property_id] ?? "—" },
               { k: "unit_label", h: "Unit" },
               { k: "monthly_rent_ksh", h: "Rent (KES)" },
               { k: "status", h: "Status" },
-            ]} onDelete={(r) => setPendingDelete({ table: "tenants", id: r.id, label: r.full_name })} />
+              { k: "owner_id", h: "Owner", render: (r) => ownerMap[r.owner_id] ?? "—" },
+            ]} onDelete={(r) => setPendingDelete({ kind: "record", table: "tenants", id: r.id, label: r.full_name })} />
           </TabsContent>
 
           <TabsContent value="payments" className="mt-6">
             <DataCard title="All rent payments" rows={payments} columns={[
+              { k: "tenant_id", h: "Tenant", render: (r) => tenantMap[r.tenant_id] ?? "—" },
+              { k: "property_id", h: "Property", render: (r) => propertyMap[r.property_id] ?? "—" },
+              { k: "owner_id", h: "Owner", render: (r) => ownerMap[r.owner_id] ?? "—" },
               { k: "period", h: "Period", render: (r) => `${r.period_month}/${r.period_year}` },
               { k: "amount_due", h: "Due" },
               { k: "amount_paid", h: "Paid" },
               { k: "due_date", h: "Due date" },
               { k: "status", h: "Status" },
-            ]} onDelete={(r) => setPendingDelete({ table: "rent_payments", id: r.id, label: `Payment ${r.id.slice(0, 8)}` })} />
+            ]} onDelete={(r) => setPendingDelete({ kind: "record", table: "rent_payments", id: r.id, label: `Payment ${r.id.slice(0, 8)}` })} />
           </TabsContent>
 
           <TabsContent value="issues" className="mt-6">
             <DataCard title="All maintenance issues" rows={issues} columns={[
               { k: "title", h: "Title" },
+              { k: "tenant_id", h: "Tenant", render: (r) => tenantMap[r.tenant_id] ?? "—" },
+              { k: "property_id", h: "Property", render: (r) => propertyMap[r.property_id] ?? "—" },
               { k: "priority", h: "Priority" },
               { k: "status", h: "Status" },
               { k: "created_at", h: "Reported", render: (r) => format(new Date(r.created_at), "MMM d, yyyy") },
-            ]} onDelete={(r) => setPendingDelete({ table: "maintenance_issues", id: r.id, label: r.title })} />
+            ]} onDelete={(r) => setPendingDelete({ kind: "record", table: "maintenance_issues", id: r.id, label: r.title })} />
           </TabsContent>
         </Tabs>
       </main>
@@ -407,6 +524,114 @@ export default function AdminDashboard() {
             <Button variant="ghost" onClick={() => setEditUser(null)} disabled={savingRoles}>Cancel</Button>
             <Button onClick={saveEditRoles} disabled={savingRoles}>
               {savingRoles ? "Saving…" : "Save roles"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!editProperty} onOpenChange={(o) => !o && setEditProperty(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit property</DialogTitle>
+            <DialogDescription>
+              Update property details for {editProperty?.name}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="prop-name">Property name *</Label>
+                <Input
+                  id="prop-name"
+                  value={editPropertyForm.name || ""}
+                  onChange={(e) => setEditPropertyForm({ ...editPropertyForm, name: e.target.value })}
+                  placeholder="e.g., Westlands Apartments"
+                />
+              </div>
+              <div>
+                <Label htmlFor="prop-type">Type</Label>
+                <select
+                  id="prop-type"
+                  value={editPropertyForm.property_type || "apartment"}
+                  onChange={(e) => setEditPropertyForm({ ...editPropertyForm, property_type: e.target.value })}
+                  className="w-full px-3 py-2 border border-input rounded-md text-sm"
+                >
+                  <option value="apartment">Apartment</option>
+                  <option value="house">House</option>
+                  <option value="commercial">Commercial</option>
+                  <option value="land">Land</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div>
+                <Label htmlFor="prop-address">Address *</Label>
+                <Input
+                  id="prop-address"
+                  value={editPropertyForm.address || ""}
+                  onChange={(e) => setEditPropertyForm({ ...editPropertyForm, address: e.target.value })}
+                  placeholder="Street address"
+                />
+              </div>
+              <div>
+                <Label htmlFor="prop-city">City *</Label>
+                <Input
+                  id="prop-city"
+                  value={editPropertyForm.city || ""}
+                  onChange={(e) => setEditPropertyForm({ ...editPropertyForm, city: e.target.value })}
+                  placeholder="City"
+                />
+              </div>
+              <div>
+                <Label htmlFor="prop-units">Units count</Label>
+                <Input
+                  id="prop-units"
+                  type="number"
+                  value={editPropertyForm.units_count || 1}
+                  onChange={(e) => setEditPropertyForm({ ...editPropertyForm, units_count: parseInt(e.target.value) || 1 })}
+                  placeholder="1"
+                  min="1"
+                />
+              </div>
+              <div>
+                <Label htmlFor="prop-rent">Monthly rent (KES)</Label>
+                <Input
+                  id="prop-rent"
+                  type="number"
+                  value={editPropertyForm.monthly_rent_ksh || 0}
+                  onChange={(e) => setEditPropertyForm({ ...editPropertyForm, monthly_rent_ksh: parseFloat(e.target.value) || 0 })}
+                  placeholder="0"
+                  step="0.01"
+                />
+              </div>
+              <div>
+                <Label htmlFor="prop-status">Status</Label>
+                <select
+                  id="prop-status"
+                  value={editPropertyForm.status || "active"}
+                  onChange={(e) => setEditPropertyForm({ ...editPropertyForm, status: e.target.value })}
+                  className="w-full px-3 py-2 border border-input rounded-md text-sm"
+                >
+                  <option value="active">Active</option>
+                  <option value="draft">Draft</option>
+                  <option value="archived">Archived</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="prop-description">Description</Label>
+              <textarea
+                id="prop-description"
+                value={editPropertyForm.description || ""}
+                onChange={(e) => setEditPropertyForm({ ...editPropertyForm, description: e.target.value })}
+                placeholder="Property description"
+                className="w-full px-3 py-2 border border-input rounded-md text-sm min-h-[100px]"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setEditProperty(null)} disabled={savingProperty}>Cancel</Button>
+            <Button onClick={saveEditProperty} disabled={savingProperty}>
+              {savingProperty ? "Saving…" : "Save property"}
             </Button>
           </DialogFooter>
         </DialogContent>
