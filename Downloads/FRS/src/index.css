@@ -1,0 +1,132 @@
+@import url('https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   Estate — Property Management Platform
+   Trust & Finance: Navy + Gold
+   ============================================================ */
+
+@layer base {
+  :root {
+    /* Surfaces */
+    --background: 38 35% 97%;          /* warm cream */
+    --foreground: 222 45% 11%;         /* deep navy ink */
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 45% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 45% 11%;
+
+    /* Brand */
+    --primary: 222 60% 16%;            /* deep navy #0f1b3d-ish */
+    --primary-foreground: 38 50% 96%;
+    --primary-hover: 222 55% 22%;
+
+    --accent: 43 60% 54%;              /* warm gold #c9a84c */
+    --accent-foreground: 222 60% 12%;
+    --accent-soft: 43 70% 88%;
+
+    --secondary: 38 30% 92%;
+    --secondary-foreground: 222 45% 16%;
+
+    --muted: 38 25% 93%;
+    --muted-foreground: 222 18% 38%;
+
+    --destructive: 0 70% 45%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 38 20% 86%;
+    --input: 38 20% 86%;
+    --ring: 222 60% 22%;
+
+    --radius: 0.375rem;
+
+    /* Gradients */
+    --gradient-hero: linear-gradient(135deg, hsl(222 60% 14%) 0%, hsl(222 55% 22%) 60%, hsl(43 50% 30%) 100%);
+    --gradient-gold: linear-gradient(135deg, hsl(43 65% 58%) 0%, hsl(38 70% 48%) 100%);
+    --gradient-subtle: linear-gradient(180deg, hsl(38 35% 97%) 0%, hsl(38 30% 94%) 100%);
+    --gradient-overlay: linear-gradient(180deg, hsl(222 60% 8% / 0.1) 0%, hsl(222 60% 8% / 0.85) 100%);
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 hsl(222 45% 11% / 0.04);
+    --shadow-md: 0 4px 12px -2px hsl(222 45% 11% / 0.08), 0 2px 4px -2px hsl(222 45% 11% / 0.04);
+    --shadow-lg: 0 20px 40px -12px hsl(222 45% 11% / 0.18);
+    --shadow-gold: 0 8px 32px -8px hsl(43 60% 50% / 0.4);
+    --shadow-elegant: 0 30px 60px -20px hsl(222 60% 16% / 0.25);
+
+    /* Motion */
+    --transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-smooth: 400ms cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* Sidebar (kept for shadcn) */
+    --sidebar-background: 222 60% 14%;
+    --sidebar-foreground: 38 30% 92%;
+    --sidebar-primary: 43 60% 54%;
+    --sidebar-primary-foreground: 222 60% 12%;
+    --sidebar-accent: 222 55% 20%;
+    --sidebar-accent-foreground: 38 30% 92%;
+    --sidebar-border: 222 50% 22%;
+    --sidebar-ring: 43 60% 54%;
+  }
+
+  .dark {
+    --background: 222 50% 7%;
+    --foreground: 38 35% 95%;
+    --card: 222 45% 10%;
+    --card-foreground: 38 35% 95%;
+    --popover: 222 45% 10%;
+    --popover-foreground: 38 35% 95%;
+    --primary: 43 60% 54%;
+    --primary-foreground: 222 60% 10%;
+    --primary-hover: 43 65% 60%;
+    --accent: 43 60% 54%;
+    --accent-foreground: 222 60% 10%;
+    --accent-soft: 222 40% 18%;
+    --secondary: 222 40% 14%;
+    --secondary-foreground: 38 35% 95%;
+    --muted: 222 35% 14%;
+    --muted-foreground: 38 15% 65%;
+    --destructive: 0 65% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 222 35% 18%;
+    --input: 222 35% 18%;
+    --ring: 43 60% 54%;
+  }
+}
+
+@layer base {
+  * { @apply border-border; }
+  html { scroll-behavior: smooth; }
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'IBM Plex Sans', system-ui, sans-serif;
+    font-feature-settings: 'ss01', 'cv01';
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, h4, h5, .font-serif {
+    font-family: 'Libre Baskerville', Georgia, serif;
+    letter-spacing: -0.01em;
+  }
+}
+
+@layer utilities {
+  .text-balance { text-wrap: balance; }
+  .bg-hero { background: var(--gradient-hero); }
+  .bg-gold { background: var(--gradient-gold); }
+  .bg-subtle { background: var(--gradient-subtle); }
+  .shadow-elegant { box-shadow: var(--shadow-elegant); }
+  .shadow-gold { box-shadow: var(--shadow-gold); }
+  .container-narrow { @apply max-w-5xl mx-auto px-6 lg:px-8; }
+  .container-wide { @apply max-w-7xl mx-auto px-6 lg:px-8; }
+}
+
+@layer components {
+  .gold-rule {
+    @apply inline-block h-px w-12 align-middle;
+    background: hsl(var(--accent));
+  }
+}
